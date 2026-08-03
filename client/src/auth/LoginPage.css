@@ -1,0 +1,86 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1e1e2e;
+  color: #eee;
+}
+
+.login-card {
+  background: #2a2a3d;
+  padding: 32px;
+  border-radius: 12px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-card h1 {
+  margin: 0;
+  text-align: center;
+}
+
+.mode-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.mode-toggle button {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  background: #3a3a52;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.mode-toggle button.active {
+  background: #4ade80;
+  color: #111;
+  font-weight: 600;
+}
+
+.auth-form,
+.guest-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+input {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #1e1e2e;
+  color: #eee;
+}
+
+button[type="submit"] {
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+  background: #4ade80;
+  color: #111;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button[type="submit"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.divider {
+  text-align: center;
+  color: #777;
+  font-size: 12px;
+}
+
+.error {
+  color: #f87171;
+  font-size: 13px;
+  margin: 0;
+}

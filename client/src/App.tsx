@@ -1,21 +1,20 @@
-import { PhaserGame } from "./game/PhaserGame";
-import { useSocket } from "./useSocket";
-import "./App.css";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { AuthProvider } from "./auth/AuthContext";
+import { LoginPage } from "./auth/LoginPage";
+import { SocketProvider } from "./socket/SocketProvider";
+import { RoomPage } from "./room/RoomPage";
 
 function App() {
-  const { connected, lastPong, ping } = useSocket();
-
   return (
-    <div className="app">
-      <div className="status-bar">
-        <span>Server: {connected ? "connected" : "disconnected"}</span>
-        <button onClick={ping} disabled={!connected}>
-          Ping server
-        </button>
-        {lastPong && <span>{lastPong}</span>}
-      </div>
-      <PhaserGame />
-    </div>
+    <AuthProvider>
+      <SocketProvider>
+        <Routes>
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/room/:roomId" element={<RoomPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </SocketProvider>
+    </AuthProvider>
   );
 }
 

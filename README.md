@@ -1,5 +1,8 @@
 # Study XP - A gamified social study space
 
+![alt text](image.png)
+
+
 - A 2D pixel art website where the core feature is a shared timer across multiple people
 - You can join rooms either one off rooms or you create your own room where people are invited 
 - And there will be some microtransactions for cosmetics and also you can buy them as well with money you get from studying

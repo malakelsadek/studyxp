@@ -1,0 +1,335 @@
+.room-page {
+  min-height: 100vh;
+  background: #1e1e2e;
+  color: #eee;
+  display: flex;
+  flex-direction: column;
+}
+
+.room-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: #2a2a3d;
+}
+
+.room-topbar button {
+  margin-left: auto;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #f87171;
+  color: #111;
+  cursor: pointer;
+}
+
+.room-body {
+  position: relative;
+  padding: 16px;
+  display: inline-flex;
+}
+
+.side-nav {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 30;
+}
+
+.side-nav button {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: #2a2a3d;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.side-nav button.active {
+  background: #4ade80;
+}
+
+.tile {
+  position: absolute;
+  z-index: 20;
+  width: 280px;
+  background: #2a2a3d;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #1e1e2e;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: move;
+  user-select: none;
+}
+
+.tile-header button {
+  background: none;
+  border: none;
+  color: #eee;
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.tile-body {
+  padding: 12px;
+}
+
+.mode-switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #888;
+  cursor: pointer;
+  user-select: none;
+}
+
+.mode-switch span.active {
+  color: #eee;
+  font-weight: 600;
+}
+
+.mode-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+  background: #1e1e2e;
+  border-radius: 999px;
+  transition: background 0.2s;
+}
+
+.switch-slider::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #888;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.mode-switch input:checked + .switch-slider {
+  background: #4ade80;
+}
+
+.mode-switch input:checked + .switch-slider::before {
+  transform: translateX(16px);
+  background: #111;
+}
+
+.timer-panel {
+  text-align: center;
+}
+
+.timer-display {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.timer-mode {
+  text-transform: capitalize;
+  color: #aaa;
+  margin-bottom: 8px;
+}
+
+.timer-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.timer-controls button {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: #4ade80;
+  color: #111;
+  cursor: pointer;
+}
+
+.timer-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chat-overlay {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 280px;
+  max-width: 40%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 15;
+  pointer-events: none;
+}
+
+.chat-overlay-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+}
+
+.chat-overlay-message {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: #fff;
+  word-break: break-word;
+}
+
+.chat-from {
+  font-weight: 600;
+  color: #4ade80;
+}
+
+.chat-overlay-input {
+  pointer-events: auto;
+}
+
+.chat-overlay-input input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+}
+
+.chat-overlay-input input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.todo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.todo-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.todo-items li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.todo-items li label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  cursor: pointer;
+}
+
+.todo-items li.done span {
+  text-decoration: line-through;
+  color: #888;
+}
+
+.todo-author {
+  font-size: 11px;
+  color: #888;
+}
+
+.todo-items li button {
+  background: none;
+  border: none;
+  color: #f87171;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.todo-input {
+  display: flex;
+  gap: 6px;
+}
+
+.todo-input input {
+  flex: 1;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #1e1e2e;
+  color: #eee;
+}
+
+.todo-input button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #4ade80;
+  color: #111;
+  cursor: pointer;
+}
+
+.shortcuts-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shortcuts-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.shortcuts-list kbd {
+  background: #1e1e2e;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-family: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+}
