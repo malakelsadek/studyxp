@@ -36,7 +36,13 @@ function getOrCreateRoom(roomId: string): RoomState {
   return room;
 }
 
-function toSnapshot(roomId: string, room: RoomState, selfId: string): RoomSnapshot {
+export interface RoomDbMeta {
+  name: string;
+  backgroundUrl: string | null;
+  maxCapacity: number;
+}
+
+function toSnapshot(roomId: string, room: RoomState, selfId: string, dbMeta: RoomDbMeta): RoomSnapshot {
   return {
     roomId,
     selfId,
@@ -44,13 +50,20 @@ function toSnapshot(roomId: string, room: RoomState, selfId: string): RoomSnapsh
     timer: room.timer,
     messages: room.messages,
     todos: room.todos,
+    name: dbMeta.name,
+    backgroundUrl: dbMeta.backgroundUrl,
+    maxCapacity: dbMeta.maxCapacity,
   };
 }
 
-export function joinRoom(roomId: string, socketId: string, player: PlayerDTO): RoomSnapshot {
+export function joinRoom(roomId: string, socketId: string, player: PlayerDTO, dbMeta: RoomDbMeta): RoomSnapshot {
   const room = getOrCreateRoom(roomId);
   room.players.set(socketId, { ...player, socketId });
-  return toSnapshot(roomId, room, player.id);
+  return toSnapshot(roomId, room, player.id, dbMeta);
+}
+
+export function getPlayerCount(roomId: string): number {
+  return rooms.get(roomId)?.players.size ?? 0;
 }
 
 export function leaveRoom(roomId: string, socketId: string): PlayerDTO | null {

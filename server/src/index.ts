@@ -26,6 +26,8 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
+app.use("/uploads", express.static("uploads"));
+
 app.use("/auth", authRouter);
 app.use("/users", usersRouter);
 app.use("/stats", statsRouter);

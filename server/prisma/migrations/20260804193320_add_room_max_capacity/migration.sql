@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Room" ADD COLUMN     "maxCapacity" INTEGER NOT NULL DEFAULT 20;

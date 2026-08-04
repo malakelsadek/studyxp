@@ -1,0 +1,35 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+
+:root {
+  --pixel-font: "Press Start 2P", "Courier New", Courier, monospace;
+  --pixel-border: #0d0d14;
+  --pixel-shadow: 4px 4px 0 rgba(0, 0, 0, 0.6);
+  --pixel-shadow-sm: 2px 2px 0 rgba(0, 0, 0, 0.6);
+}
+
+button {
+  font-family: var(--pixel-font);
+  font-size: 10px;
+  line-height: 1.6;
+  border-radius: 0 !important;
+  image-rendering: pixelated;
+  box-shadow: var(--pixel-shadow-sm);
+  border: 2px solid var(--pixel-border) !important;
+  transition: transform 0.05s ease;
+}
+
+button:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: none !important;
+}
+
+input,
+textarea,
+select {
+  border-radius: 0 !important;
+  border: 2px solid var(--pixel-border) !important;
+}
+
+input[type="file"] {
+  border: none !important;
+}

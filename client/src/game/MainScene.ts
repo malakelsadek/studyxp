@@ -1,12 +1,17 @@
 import Phaser from "phaser";
 import type { PlayerDTO } from "../socket/types";
-import { getCharacterPreset } from "./characterPresets";
+import { CHARACTER_PRESETS } from "./characterPresets";
 
 const MOVE_EMIT_INTERVAL_MS = 60;
 const BUBBLE_DURATION_MS = 8000;
-const CHAR_WIDTH = 22;
-const CHAR_HEIGHT = 36;
+const SPRITE_NATIVE_HEIGHT = 160;
+const SPRITE_DISPLAY_HEIGHT = 84;
+const SPRITE_SCALE = SPRITE_DISPLAY_HEIGHT / SPRITE_NATIVE_HEIGHT;
+const HIT_WIDTH = 56;
+const DEFAULT_BACKGROUND_URL = "/assets/map.png";
 export const FONT_FAMILY = "'Courier New', Courier, monospace";
+export const WORLD_WIDTH = 1536;
+export const WORLD_HEIGHT = 1024;
 
 function isTypingInFormField(): boolean {
   const el = document.activeElement;
@@ -15,9 +20,7 @@ function isTypingInFormField(): boolean {
 
 interface PlayerVisual {
   container: Phaser.GameObjects.Container;
-  body: Phaser.GameObjects.Rectangle;
-  head: Phaser.GameObjects.Rectangle;
-  hair: Phaser.GameObjects.Rectangle;
+  sprite: Phaser.GameObjects.Image;
   label: Phaser.GameObjects.Text;
   bubble?: Phaser.GameObjects.Text;
   bubbleTimer?: Phaser.Time.TimerEvent;
@@ -27,6 +30,7 @@ export class MainScene extends Phaser.Scene {
   private localVisual?: PlayerVisual;
   private otherVisuals = new Map<string, PlayerVisual>();
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
+  private backgroundImage?: Phaser.GameObjects.Image;
   private selfId: string | null = null;
   private selfDisplayName = "You";
   private selfCharacter = "char-1";
@@ -40,21 +44,29 @@ export class MainScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("map", "/assets/map.png");
+    this.load.image("map", DEFAULT_BACKGROUND_URL);
+    for (const preset of CHARACTER_PRESETS) {
+      this.load.image(preset.id, preset.spriteUrl);
+    }
   }
 
   create() {
-    const { width, height } = this.scale;
-    this.add.image(0, 0, "map").setOrigin(0, 0).setDisplaySize(width, height);
+    this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
-    this.add
-      .text(16, 16, "StudyXP — Lobby", { fontFamily: FONT_FAMILY, fontSize: "16px", color: "#ffffff" })
-      .setDepth(10);
+    this.backgroundImage = this.add
+      .image(0, 0, "map")
+      .setOrigin(0, 0)
+      .setDisplaySize(WORLD_WIDTH, WORLD_HEIGHT);
 
-    this.localVisual = this.createVisual(width / 2, height / 2, this.selfCharacter, this.selfDisplayName, true);
+    this.localVisual = this.createVisual(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, this.selfCharacter, this.selfDisplayName, true);
     this.localVisual.container.on("pointerdown", () => {
       if (this.selfId) this.onPlayerClick?.(this.selfId);
     });
+
+    const body = this.localVisual.container.body as Phaser.Physics.Arcade.Body;
+    body.setCollideWorldBounds(true);
+    this.cameras.main.startFollow(this.localVisual.container, true, 0.12, 0.12);
 
     this.cursors = this.input.keyboard?.createCursorKeys();
     this.input.keyboard?.disableGlobalCapture();
@@ -100,6 +112,25 @@ export class MainScene extends Phaser.Scene {
       this.localVisual.label.setText(displayName);
       this.applyCharacter(this.localVisual, character);
     }
+  }
+
+  setBackground(url: string | null) {
+    const targetUrl = url ?? DEFAULT_BACKGROUND_URL;
+    const key = url ? `bg-custom-${url}` : "map";
+
+    if (this.textures.exists(key)) {
+      this.applyBackgroundTexture(key);
+      return;
+    }
+
+    this.load.image(key, targetUrl);
+    this.load.once(`filecomplete-image-${key}`, () => this.applyBackgroundTexture(key));
+    this.load.start();
+  }
+
+  private applyBackgroundTexture(key: string) {
+    this.backgroundImage?.setTexture(key);
+    this.backgroundImage?.setDisplaySize(WORLD_WIDTH, WORLD_HEIGHT);
   }
 
   showChatBubble(playerId: string, text: string) {
@@ -166,14 +197,10 @@ export class MainScene extends Phaser.Scene {
     withPhysics = false,
     clickId?: string,
   ): PlayerVisual {
-    const preset = getCharacterPreset(character);
+    const sprite = this.add.image(0, 0, character).setScale(SPRITE_SCALE);
 
-    const body = this.add.rectangle(0, 9, 20, 18, preset.outfit);
-    const head = this.add.rectangle(0, -8, 16, 14, preset.skin);
-    const hair = this.add.rectangle(0, -16, 18, 6, preset.hair);
-
-    const container = this.add.container(x, y, [body, head, hair]);
-    container.setSize(CHAR_WIDTH, CHAR_HEIGHT);
+    const container = this.add.container(x, y, [sprite]);
+    container.setSize(HIT_WIDTH, SPRITE_DISPLAY_HEIGHT);
     container.setInteractive({ useHandCursor: true });
 
     if (withPhysics) {
@@ -183,7 +210,7 @@ export class MainScene extends Phaser.Scene {
       container.on("pointerdown", () => this.onPlayerClick?.(clickId));
     }
 
-    const label = this.add.text(x, y - 27, name, {
+    const label = this.add.text(x, y - SPRITE_DISPLAY_HEIGHT / 2 - 10, name, {
       fontFamily: FONT_FAMILY,
       fontSize: "12px",
       color: "#ffffff",
@@ -192,18 +219,15 @@ export class MainScene extends Phaser.Scene {
     });
     label.setOrigin(0.5, 1);
 
-    return { container, body, head, hair, label };
+    return { container, sprite, label };
   }
 
   private applyCharacter(visual: PlayerVisual, character: string) {
-    const preset = getCharacterPreset(character);
-    visual.body.setFillStyle(preset.outfit);
-    visual.head.setFillStyle(preset.skin);
-    visual.hair.setFillStyle(preset.hair);
+    visual.sprite.setTexture(character);
   }
 
   private updateAttachments(visual: PlayerVisual) {
-    visual.label.setPosition(visual.container.x, visual.container.y - 27);
-    visual.bubble?.setPosition(visual.container.x, visual.container.y - 43);
+    visual.label.setPosition(visual.container.x, visual.container.y - SPRITE_DISPLAY_HEIGHT / 2 - 10);
+    visual.bubble?.setPosition(visual.container.x, visual.container.y - SPRITE_DISPLAY_HEIGHT / 2 - 26);
   }
 }

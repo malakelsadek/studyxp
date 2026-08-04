@@ -8,6 +8,7 @@ interface PhaserGameProps {
   selfId: string | null;
   selfDisplayName: string;
   selfCharacter: string;
+  backgroundUrl: string | null;
   messages: ChatMessage[];
   onLocalMove: (x: number, y: number) => void;
   onPlayerClick: (id: string) => void;
@@ -18,6 +19,7 @@ export function PhaserGame({
   selfId,
   selfDisplayName,
   selfCharacter,
+  backgroundUrl,
   messages,
   onLocalMove,
   onPlayerClick,
@@ -33,6 +35,8 @@ export function PhaserGame({
   playersRef.current = players;
   const selfRef = useRef({ selfId, selfDisplayName, selfCharacter });
   selfRef.current = { selfId, selfDisplayName, selfCharacter };
+  const backgroundUrlRef = useRef(backgroundUrl);
+  backgroundUrlRef.current = backgroundUrl;
   const seenMessageIds = useRef<Set<string> | null>(null);
 
   useEffect(() => {
@@ -40,10 +44,14 @@ export function PhaserGame({
 
     const game = new Phaser.Game({
       type: Phaser.AUTO,
-      width: 1200,
-      height: 800,
       parent: containerRef.current,
       backgroundColor: "#1e1e2e",
+      pixelArt: true,
+      scale: {
+        mode: Phaser.Scale.RESIZE,
+        width: containerRef.current.clientWidth,
+        height: containerRef.current.clientHeight,
+      },
       physics: {
         default: "arcade",
         arcade: { gravity: { x: 0, y: 0 }, debug: false },
@@ -61,6 +69,9 @@ export function PhaserGame({
         scene.setSelf(selfRef.current.selfId, selfRef.current.selfDisplayName, selfRef.current.selfCharacter);
       }
       scene.syncPlayers(playersRef.current);
+      if (backgroundUrlRef.current) {
+        scene.setBackground(backgroundUrlRef.current);
+      }
     });
 
     return () => {
@@ -77,6 +88,10 @@ export function PhaserGame({
   useEffect(() => {
     sceneRef.current?.syncPlayers(players);
   }, [players]);
+
+  useEffect(() => {
+    sceneRef.current?.setBackground(backgroundUrl);
+  }, [backgroundUrl]);
 
   useEffect(() => {
     if (seenMessageIds.current === null) {

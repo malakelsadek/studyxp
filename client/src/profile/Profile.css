@@ -1,7 +1,7 @@
 .profile-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12,17 +12,20 @@
   position: relative;
   background: #2a2a3d;
   color: #eee;
-  border-radius: 12px;
+  border: 3px solid #0d0d14;
   padding: 24px;
   width: 360px;
   max-width: 90vw;
   max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.6);
+  font-family: "Courier New", monospace;
 }
 
 .profile-modal h2 {
-  margin: 0 0 12px;
+  margin: 0 0 16px;
+  font-family: "Press Start 2P", "Courier New", monospace;
+  font-size: 14px;
 }
 
 .profile-modal-close {
@@ -31,6 +34,7 @@
   right: 12px;
   background: none;
   border: none;
+  box-shadow: none;
   color: #eee;
   font-size: 20px;
   cursor: pointer;
@@ -55,8 +59,6 @@
   width: 100%;
   box-sizing: border-box;
   padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #444;
   background: #1e1e2e;
   color: #eee;
   font-family: inherit;
@@ -69,8 +71,6 @@
   box-sizing: border-box;
   min-height: 80px;
   padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #444;
   background: #1e1e2e;
   color: #eee;
   font-family: inherit;
@@ -90,7 +90,7 @@
   align-items: center;
   gap: 4px;
   background: #1e1e2e;
-  border-radius: 999px;
+  border: 2px solid #0d0d14;
   padding: 4px 10px;
   font-size: 12px;
 }
@@ -98,6 +98,7 @@
 .interest-tag button {
   background: none;
   border: none;
+  box-shadow: none;
   color: #f87171;
   cursor: pointer;
   font-size: 13px;
@@ -117,28 +118,20 @@
 .interest-input-row input {
   flex: 1;
   padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid #444;
   background: #1e1e2e;
   color: #eee;
 }
 
 .interest-input-row button {
   padding: 6px 10px;
-  border: none;
-  border-radius: 6px;
   background: #4ade80;
   color: #111;
-  cursor: pointer;
 }
 
 .profile-edit-btn {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
+  padding: 8px 12px;
   background: #1e1e2e;
   color: #eee;
-  cursor: pointer;
   margin-bottom: 16px;
 }
 
@@ -150,21 +143,14 @@
 
 .profile-actions button:first-child {
   padding: 8px 14px;
-  border: none;
-  border-radius: 6px;
   background: #4ade80;
   color: #111;
-  cursor: pointer;
-  font-weight: 600;
 }
 
 .profile-actions button:last-child {
   padding: 8px 14px;
-  border: none;
-  border-radius: 6px;
   background: #1e1e2e;
   color: #eee;
-  cursor: pointer;
 }
 
 .profile-actions button:disabled {
@@ -181,20 +167,21 @@
 
 .stat-tile {
   background: #1e1e2e;
-  border-radius: 8px;
+  border: 2px solid #0d0d14;
   padding: 10px;
   text-align: center;
 }
 
 .stat-value {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
+  font-family: "Press Start 2P", "Courier New", monospace;
 }
 
 .stat-label {
   font-size: 11px;
   color: #888;
-  margin-top: 2px;
+  margin-top: 6px;
 }
 
 .heatmap {
@@ -218,7 +205,6 @@
 .heatmap-cell {
   width: 10px;
   height: 10px;
-  border-radius: 2px;
 }
 
 .heatmap-legend {
@@ -232,5 +218,4 @@
 .heatmap-swatch {
   width: 10px;
   height: 10px;
-  border-radius: 2px;
 }

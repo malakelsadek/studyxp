@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSocketContext } from "../socket/SocketProvider";
 import type { ChatMessage, PlayerDTO, TimerMode, TimerState, TodoItem } from "../socket/types";
 import { defaultTimer } from "./timerMath";
+import { resolveAssetUrl } from "../lib/api";
 
 export function useRoomState(roomId: string) {
   const { socket, connected } = useSocketContext();
@@ -10,6 +11,9 @@ export function useRoomState(roomId: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [timer, setTimer] = useState<TimerState>(defaultTimer());
   const [todos, setTodos] = useState<TodoItem[]>([]);
+  const [name, setName] = useState("");
+  const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
+  const [maxCapacity, setMaxCapacity] = useState(20);
   const [joinError, setJoinError] = useState<string | null>(null);
   const joinedRoomId = useRef<string | null>(null);
 
@@ -28,12 +32,18 @@ export function useRoomState(roomId: string) {
       messages: ChatMessage[];
       timer: TimerState;
       todos: TodoItem[];
+      name: string;
+      backgroundUrl: string | null;
+      maxCapacity: number;
     }) => {
       setSelfId(snapshot.selfId);
       setPlayers(Object.fromEntries(snapshot.players.map((p) => [p.id, p])));
       setMessages(snapshot.messages);
       setTimer(snapshot.timer);
       setTodos(snapshot.todos);
+      setName(snapshot.name);
+      setBackgroundUrl(snapshot.backgroundUrl ? resolveAssetUrl(snapshot.backgroundUrl) : null);
+      setMaxCapacity(snapshot.maxCapacity);
     };
 
     const onPlayerJoined = ({ player }: { player: PlayerDTO }) => {
@@ -58,6 +68,10 @@ export function useRoomState(roomId: string) {
 
     const onTimerUpdate = (next: TimerState) => setTimer(next);
     const onTodoUpdate = ({ todos: next }: { todos: TodoItem[] }) => setTodos(next);
+    const onBackgroundUpdate = ({ url }: { url: string | null }) => {
+      setBackgroundUrl(url ? resolveAssetUrl(url) : null);
+    };
+    const onNameUpdate = ({ name: next }: { name: string }) => setName(next);
     const onRoomError = ({ message }: { message: string }) => {
       joinedRoomId.current = null;
       setJoinError(message);
@@ -70,6 +84,8 @@ export function useRoomState(roomId: string) {
     socket.on("chat:message", onChatMessage);
     socket.on("timer:update", onTimerUpdate);
     socket.on("todo:update", onTodoUpdate);
+    socket.on("room:background", onBackgroundUpdate);
+    socket.on("room:name", onNameUpdate);
     socket.on("room:error", onRoomError);
 
     return () => {
@@ -80,6 +96,8 @@ export function useRoomState(roomId: string) {
       socket.off("chat:message", onChatMessage);
       socket.off("timer:update", onTimerUpdate);
       socket.off("todo:update", onTodoUpdate);
+      socket.off("room:background", onBackgroundUpdate);
+      socket.off("room:name", onNameUpdate);
       socket.off("room:error", onRoomError);
     };
   }, [socket, connected, roomId]);
@@ -92,6 +110,8 @@ export function useRoomState(roomId: string) {
   const addTodo = (text: string) => socket?.emit("todo:add", { text });
   const toggleTodo = (id: string) => socket?.emit("todo:toggle", { id });
   const removeTodo = (id: string) => socket?.emit("todo:remove", { id });
+  const broadcastBackground = (url: string | null) => socket?.emit("room:background", { url });
+  const broadcastName = (nextName: string) => socket?.emit("room:name", { name: nextName });
 
   return {
     connected,
@@ -100,6 +120,9 @@ export function useRoomState(roomId: string) {
     messages,
     timer,
     todos,
+    name,
+    backgroundUrl,
+    maxCapacity,
     joinError,
     move,
     sendChat,
@@ -109,5 +132,8 @@ export function useRoomState(roomId: string) {
     addTodo,
     toggleTodo,
     removeTodo,
+    broadcastBackground,
+    broadcastName,
+    setMaxCapacity,
   };
 }

@@ -6,6 +6,7 @@ import { verifyToken } from "../auth/jwt.js";
 import {
   addChatMessage,
   addTodo,
+  getPlayerCount,
   joinRoom,
   leaveRoom,
   movePlayer,
@@ -85,14 +86,38 @@ export function registerSocketHandlers(io: AppServer) {
         return socket.emit("room:error", { message: "Incorrect room password" });
       }
 
+      const alreadyJoined = socket.data.roomId === roomId;
+      if (!alreadyJoined && getPlayerCount(roomId) >= room.maxCapacity) {
+        return socket.emit("room:error", { message: "Room is full" });
+      }
+
       socket.data.roomId = roomId;
       socket.join(roomId);
 
-      const player = { ...socket.data.user, x: 600, y: 400 };
-      const snapshot = joinRoom(roomId, socket.id, player);
+      const player = { ...socket.data.user, x: 768, y: 512 };
+      const snapshot = joinRoom(roomId, socket.id, player, {
+        name: room.name,
+        backgroundUrl: room.backgroundUrl,
+        maxCapacity: room.maxCapacity,
+      });
 
       socket.emit("room:snapshot", snapshot);
       socket.to(roomId).emit("player:joined", { player });
+    });
+
+    socket.on("room:background", ({ url }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId || socket.data.user.isGuest) return;
+      if (url !== null && !url.startsWith("/uploads/rooms/")) return;
+      io.to(roomId).emit("room:background", { url });
+    });
+
+    socket.on("room:name", ({ name }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId || socket.data.user.isGuest) return;
+      const trimmed = name?.trim().slice(0, 50);
+      if (!trimmed) return;
+      io.to(roomId).emit("room:name", { name: trimmed });
     });
 
     socket.on("player:move", ({ x, y }) => {
