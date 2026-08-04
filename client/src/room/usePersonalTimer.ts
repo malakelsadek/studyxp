@@ -7,7 +7,10 @@ export function usePersonalTimer() {
 
   const startTimer = (mode: TimerMode) => {
     setTimer((prev) => {
-      const base = prev.mode !== mode || prev.status === "idle" ? defaultTimer(mode) : prev;
+      const base =
+        prev.mode !== mode || prev.status === "idle"
+          ? defaultTimer(mode, prev.workDurationMs, prev.breakDurationMs)
+          : prev;
       return { ...base, status: "running", startedAt: Date.now() };
     });
   };
@@ -21,7 +24,22 @@ export function usePersonalTimer() {
     }));
   };
 
-  const resetTimer = () => setTimer((prev) => defaultTimer(prev.mode));
+  const resetTimer = () =>
+    setTimer((prev) => defaultTimer(prev.mode, prev.workDurationMs, prev.breakDurationMs));
 
-  return { timer, startTimer, pauseTimer, resetTimer };
+  const switchPhase = () => {
+    setTimer((prev) => {
+      const next = defaultTimer(prev.mode, prev.workDurationMs, prev.breakDurationMs);
+      next.phase = prev.phase === "work" ? "break" : "work";
+      return next;
+    });
+  };
+
+  const configureDurations = (workDurationMs: number, breakDurationMs: number) => {
+    setTimer((prev) =>
+      prev.status === "running" ? prev : { ...prev, workDurationMs, breakDurationMs, elapsedMsAtStart: 0 },
+    );
+  };
+
+  return { timer, startTimer, pauseTimer, resetTimer, switchPhase, configureDurations };
 }

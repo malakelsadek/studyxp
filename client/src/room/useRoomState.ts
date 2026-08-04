@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useSocketContext } from "../socket/SocketProvider";
-import type { ChatMessage, PlayerDTO, TimerMode, TimerState, TodoItem } from "../socket/types";
+import type {
+  ChatMessage,
+  PersonalTodoItem,
+  PlayerDTO,
+  TimerMode,
+  TimerState,
+  TodoItem,
+} from "../socket/types";
 import { defaultTimer } from "./timerMath";
 import { resolveAssetUrl } from "../lib/api";
 
@@ -11,6 +18,7 @@ export function useRoomState(roomId: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [timer, setTimer] = useState<TimerState>(defaultTimer());
   const [todos, setTodos] = useState<TodoItem[]>([]);
+  const [personalTodos, setPersonalTodos] = useState<Record<string, PersonalTodoItem[]>>({});
   const [name, setName] = useState("");
   const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
   const [maxCapacity, setMaxCapacity] = useState(20);
@@ -32,6 +40,7 @@ export function useRoomState(roomId: string) {
       messages: ChatMessage[];
       timer: TimerState;
       todos: TodoItem[];
+      personalTodos: Record<string, PersonalTodoItem[]>;
       name: string;
       backgroundUrl: string | null;
       maxCapacity: number;
@@ -41,6 +50,7 @@ export function useRoomState(roomId: string) {
       setMessages(snapshot.messages);
       setTimer(snapshot.timer);
       setTodos(snapshot.todos);
+      setPersonalTodos(snapshot.personalTodos);
       setName(snapshot.name);
       setBackgroundUrl(snapshot.backgroundUrl ? resolveAssetUrl(snapshot.backgroundUrl) : null);
       setMaxCapacity(snapshot.maxCapacity);
@@ -68,6 +78,9 @@ export function useRoomState(roomId: string) {
 
     const onTimerUpdate = (next: TimerState) => setTimer(next);
     const onTodoUpdate = ({ todos: next }: { todos: TodoItem[] }) => setTodos(next);
+    const onPersonalUpdate = ({ ownerId, todos: next }: { ownerId: string; todos: PersonalTodoItem[] }) => {
+      setPersonalTodos((prev) => ({ ...prev, [ownerId]: next }));
+    };
     const onBackgroundUpdate = ({ url }: { url: string | null }) => {
       setBackgroundUrl(url ? resolveAssetUrl(url) : null);
     };
@@ -84,6 +97,7 @@ export function useRoomState(roomId: string) {
     socket.on("chat:message", onChatMessage);
     socket.on("timer:update", onTimerUpdate);
     socket.on("todo:update", onTodoUpdate);
+    socket.on("personal:update", onPersonalUpdate);
     socket.on("room:background", onBackgroundUpdate);
     socket.on("room:name", onNameUpdate);
     socket.on("room:error", onRoomError);
@@ -96,6 +110,7 @@ export function useRoomState(roomId: string) {
       socket.off("chat:message", onChatMessage);
       socket.off("timer:update", onTimerUpdate);
       socket.off("todo:update", onTodoUpdate);
+      socket.off("personal:update", onPersonalUpdate);
       socket.off("room:background", onBackgroundUpdate);
       socket.off("room:name", onNameUpdate);
       socket.off("room:error", onRoomError);
@@ -107,9 +122,19 @@ export function useRoomState(roomId: string) {
   const startTimer = (mode: TimerMode) => socket?.emit("timer:start", { mode });
   const pauseTimer = () => socket?.emit("timer:pause");
   const resetTimer = () => socket?.emit("timer:reset");
-  const addTodo = (text: string) => socket?.emit("todo:add", { text });
+  const switchTimerPhase = () => socket?.emit("timer:switchPhase");
+  const configureTimer = (workDurationMs: number, breakDurationMs: number) =>
+    socket?.emit("timer:configure", { workDurationMs, breakDurationMs });
+  const addTodo = (text: string, estimatedMinutes: number | null) =>
+    socket?.emit("todo:add", { text, estimatedMinutes });
   const toggleTodo = (id: string) => socket?.emit("todo:toggle", { id });
   const removeTodo = (id: string) => socket?.emit("todo:remove", { id });
+  const reorderTodos = (orderedIds: string[]) => socket?.emit("todo:reorder", { orderedIds });
+  const addPersonalTodo = (text: string, estimatedMinutes: number | null, isPrivate: boolean) =>
+    socket?.emit("personal:add", { text, estimatedMinutes, private: isPrivate });
+  const togglePersonalTodo = (id: string) => socket?.emit("personal:toggle", { id });
+  const removePersonalTodo = (id: string) => socket?.emit("personal:remove", { id });
+  const reorderPersonalTodos = (orderedIds: string[]) => socket?.emit("personal:reorder", { orderedIds });
   const broadcastBackground = (url: string | null) => socket?.emit("room:background", { url });
   const broadcastName = (nextName: string) => socket?.emit("room:name", { name: nextName });
 
@@ -120,6 +145,7 @@ export function useRoomState(roomId: string) {
     messages,
     timer,
     todos,
+    personalTodos,
     name,
     backgroundUrl,
     maxCapacity,
@@ -129,9 +155,16 @@ export function useRoomState(roomId: string) {
     startTimer,
     pauseTimer,
     resetTimer,
+    switchTimerPhase,
+    configureTimer,
     addTodo,
     toggleTodo,
     removeTodo,
+    reorderTodos,
+    addPersonalTodo,
+    togglePersonalTodo,
+    removePersonalTodo,
+    reorderPersonalTodos,
     broadcastBackground,
     broadcastName,
     setMaxCapacity,

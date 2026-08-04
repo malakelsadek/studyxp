@@ -5,20 +5,28 @@ import { prisma } from "../prisma.js";
 import { verifyToken } from "../auth/jwt.js";
 import {
   addChatMessage,
+  addPersonalTodo,
   addTodo,
+  configureTimer,
   getPlayerCount,
   joinRoom,
   leaveRoom,
   movePlayer,
   pauseTimer,
+  removePersonalTodo,
   removeTodo,
+  reorderPersonalTodos,
+  reorderTodos,
   resetTimer,
   startTimer,
+  switchTimerPhase,
   toggleTodo,
+  togglePersonalTodo,
 } from "./rooms.js";
 import type {
   ClientToServerEvents,
   InterServerEvents,
+  PersonalTodoItem,
   ServerToClientEvents,
   SocketData,
 } from "./types.js";
@@ -28,15 +36,40 @@ const MAX_CHAT_LENGTH = 500;
 const MAX_TODO_LENGTH = 200;
 const DEFAULT_CHARACTER = "char-1";
 const CHARACTER_PATTERN = /^char-[a-z0-9-]+$/;
+const MIN_TIMER_MS = 60 * 1000;
+const MAX_TIMER_MS = 180 * 60 * 1000;
+const MAX_ESTIMATE_MINUTES = 24 * 60;
 
 function sanitizeCharacter(character: unknown): string {
   return typeof character === "string" && CHARACTER_PATTERN.test(character) ? character : DEFAULT_CHARACTER;
+}
+
+function clampMs(value: unknown, fallback: number): number {
+  const n = typeof value === "number" && Number.isFinite(value) ? value : fallback;
+  return Math.min(MAX_TIMER_MS, Math.max(MIN_TIMER_MS, n));
+}
+
+function sanitizeEstimate(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return null;
+  return Math.min(MAX_ESTIMATE_MINUTES, Math.round(value));
 }
 
 type AppServer = Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
 type AppSocket = Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>;
 
 export function registerSocketHandlers(io: AppServer) {
+  function broadcastPersonalUpdate(roomId: string, ownerId: string, fullItems: PersonalTodoItem[]) {
+    const socketIds = io.sockets.adapter.rooms.get(roomId);
+    if (!socketIds) return;
+    const filtered = fullItems.filter((t) => !t.private);
+    for (const socketId of socketIds) {
+      const target = io.sockets.sockets.get(socketId) as AppSocket | undefined;
+      if (!target) continue;
+      const isOwner = target.data.user.id === ownerId;
+      target.emit("personal:update", { ownerId, todos: isOwner ? fullItems : filtered });
+    }
+  }
+
   io.use(async (socket, next) => {
     const { token, guestName, character } = socket.handshake.auth as {
       token?: string;
@@ -161,10 +194,29 @@ export function registerSocketHandlers(io: AppServer) {
       if (timer) io.to(roomId).emit("timer:update", timer);
     });
 
-    socket.on("todo:add", ({ text }) => {
+    socket.on("timer:switchPhase", () => {
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      const timer = switchTimerPhase(roomId);
+      if (timer) io.to(roomId).emit("timer:update", timer);
+    });
+
+    socket.on("timer:configure", ({ workDurationMs, breakDurationMs }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      const timer = configureTimer(roomId, clampMs(workDurationMs, 25 * 60 * 1000), clampMs(breakDurationMs, 5 * 60 * 1000));
+      if (timer) io.to(roomId).emit("timer:update", timer);
+    });
+
+    socket.on("todo:add", ({ text, estimatedMinutes }) => {
       const roomId = socket.data.roomId;
       if (!roomId || !text?.trim()) return;
-      const todos = addTodo(roomId, text.trim().slice(0, MAX_TODO_LENGTH), socket.data.user.displayName);
+      const todos = addTodo(
+        roomId,
+        text.trim().slice(0, MAX_TODO_LENGTH),
+        socket.data.user.displayName,
+        sanitizeEstimate(estimatedMinutes),
+      );
       if (todos) io.to(roomId).emit("todo:update", { todos });
     });
 
@@ -180,6 +232,47 @@ export function registerSocketHandlers(io: AppServer) {
       if (!roomId) return;
       const todos = removeTodo(roomId, id);
       if (todos) io.to(roomId).emit("todo:update", { todos });
+    });
+
+    socket.on("todo:reorder", ({ orderedIds }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId || !Array.isArray(orderedIds)) return;
+      const todos = reorderTodos(roomId, orderedIds);
+      if (todos) io.to(roomId).emit("todo:update", { todos });
+    });
+
+    socket.on("personal:add", ({ text, estimatedMinutes, private: isPrivate }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId || !text?.trim()) return;
+      const items = addPersonalTodo(
+        roomId,
+        socket.data.user.id,
+        text.trim().slice(0, MAX_TODO_LENGTH),
+        sanitizeEstimate(estimatedMinutes),
+        Boolean(isPrivate),
+      );
+      if (items) broadcastPersonalUpdate(roomId, socket.data.user.id, items);
+    });
+
+    socket.on("personal:toggle", ({ id }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      const items = togglePersonalTodo(roomId, socket.data.user.id, id);
+      if (items) broadcastPersonalUpdate(roomId, socket.data.user.id, items);
+    });
+
+    socket.on("personal:remove", ({ id }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      const items = removePersonalTodo(roomId, socket.data.user.id, id);
+      if (items) broadcastPersonalUpdate(roomId, socket.data.user.id, items);
+    });
+
+    socket.on("personal:reorder", ({ orderedIds }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId || !Array.isArray(orderedIds)) return;
+      const items = reorderPersonalTodos(roomId, socket.data.user.id, orderedIds);
+      if (items) broadcastPersonalUpdate(roomId, socket.data.user.id, items);
     });
 
     socket.on("disconnect", () => {

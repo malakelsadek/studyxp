@@ -66,6 +66,7 @@ export function RoomPage() {
     messages,
     timer,
     todos,
+    personalTodos,
     name,
     backgroundUrl,
     maxCapacity,
@@ -75,9 +76,16 @@ export function RoomPage() {
     startTimer,
     pauseTimer,
     resetTimer,
+    switchTimerPhase,
+    configureTimer,
     addTodo,
     toggleTodo,
     removeTodo,
+    reorderTodos,
+    addPersonalTodo,
+    togglePersonalTodo,
+    removePersonalTodo,
+    reorderPersonalTodos,
     broadcastBackground,
     broadcastName,
     setMaxCapacity,
@@ -132,7 +140,14 @@ export function RoomPage() {
         {openPanels.timer && (
           <Tile title="Timer" initialPosition={{ x: 880, y: 72 }} onClose={() => togglePanel("timer")}>
             <TimerTile
-              shared={{ timer, startTimer, pauseTimer, resetTimer }}
+              shared={{
+                timer,
+                startTimer,
+                pauseTimer,
+                resetTimer,
+                switchPhase: switchTimerPhase,
+                configureDurations: configureTimer,
+              }}
               personal={personalTimer}
             />
           </Tile>
@@ -141,11 +156,18 @@ export function RoomPage() {
         {openPanels.todo && (
           <Tile title="To-do" initialPosition={{ x: 880, y: 260 }} onClose={() => togglePanel("todo")}>
             <TodoTile
-              userId={user.id}
+              selfId={selfId}
+              players={players}
               sharedTodos={todos}
               onSharedAdd={addTodo}
               onSharedToggle={toggleTodo}
               onSharedRemove={removeTodo}
+              onSharedReorder={reorderTodos}
+              personalTodos={personalTodos}
+              onPersonalAdd={addPersonalTodo}
+              onPersonalToggle={togglePersonalTodo}
+              onPersonalRemove={removePersonalTodo}
+              onPersonalReorder={reorderPersonalTodos}
             />
           </Tile>
         )}

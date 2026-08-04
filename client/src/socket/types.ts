@@ -1,10 +1,13 @@
 export type TimerMode = "pomodoro" | "stopwatch";
+export type TimerPhase = "work" | "break";
 export type TimerStatus = "idle" | "running" | "paused";
 
 export interface TimerState {
   mode: TimerMode;
+  phase: TimerPhase;
   status: TimerStatus;
-  durationMs: number;
+  workDurationMs: number;
+  breakDurationMs: number;
   elapsedMsAtStart: number;
   startedAt: number | null;
 }
@@ -31,6 +34,12 @@ export interface TodoItem {
   text: string;
   done: boolean;
   addedBy: string;
+  estimatedMinutes: number | null;
+  order: number;
+}
+
+export interface PersonalTodoItem extends TodoItem {
+  private: boolean;
 }
 
 export interface RoomSnapshot {
@@ -40,6 +49,7 @@ export interface RoomSnapshot {
   timer: TimerState;
   messages: ChatMessage[];
   todos: TodoItem[];
+  personalTodos: Record<string, PersonalTodoItem[]>;
   name: string;
   backgroundUrl: string | null;
   maxCapacity: number;
@@ -52,9 +62,16 @@ export interface ClientToServerEvents {
   "timer:start": (payload: { mode: TimerMode }) => void;
   "timer:pause": () => void;
   "timer:reset": () => void;
-  "todo:add": (payload: { text: string }) => void;
+  "timer:switchPhase": () => void;
+  "timer:configure": (payload: { workDurationMs: number; breakDurationMs: number }) => void;
+  "todo:add": (payload: { text: string; estimatedMinutes: number | null }) => void;
   "todo:toggle": (payload: { id: string }) => void;
   "todo:remove": (payload: { id: string }) => void;
+  "todo:reorder": (payload: { orderedIds: string[] }) => void;
+  "personal:add": (payload: { text: string; estimatedMinutes: number | null; private: boolean }) => void;
+  "personal:toggle": (payload: { id: string }) => void;
+  "personal:remove": (payload: { id: string }) => void;
+  "personal:reorder": (payload: { orderedIds: string[] }) => void;
   "room:background": (payload: { url: string | null }) => void;
   "room:name": (payload: { name: string }) => void;
 }
@@ -67,6 +84,7 @@ export interface ServerToClientEvents {
   "chat:message": (payload: ChatMessage) => void;
   "timer:update": (payload: TimerState) => void;
   "todo:update": (payload: { todos: TodoItem[] }) => void;
+  "personal:update": (payload: { ownerId: string; todos: PersonalTodoItem[] }) => void;
   "room:background": (payload: { url: string | null }) => void;
   "room:name": (payload: { name: string }) => void;
   "room:error": (payload: { message: string }) => void;
