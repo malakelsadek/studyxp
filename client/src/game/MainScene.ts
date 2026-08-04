@@ -1,10 +1,11 @@
 import Phaser from "phaser";
 import type { PlayerDTO } from "../socket/types";
-import { colorForPlayerId } from "./playerColor";
+import { getCharacterPreset } from "./characterPresets";
 
-const DEFAULT_LOCAL_COLOR = 0x4ade80;
 const MOVE_EMIT_INTERVAL_MS = 60;
 const BUBBLE_DURATION_MS = 8000;
+const CHAR_WIDTH = 22;
+const CHAR_HEIGHT = 36;
 export const FONT_FAMILY = "'Courier New', Courier, monospace";
 
 function isTypingInFormField(): boolean {
@@ -13,7 +14,10 @@ function isTypingInFormField(): boolean {
 }
 
 interface PlayerVisual {
-  rect: Phaser.GameObjects.Rectangle;
+  container: Phaser.GameObjects.Container;
+  body: Phaser.GameObjects.Rectangle;
+  head: Phaser.GameObjects.Rectangle;
+  hair: Phaser.GameObjects.Rectangle;
   label: Phaser.GameObjects.Text;
   bubble?: Phaser.GameObjects.Text;
   bubbleTimer?: Phaser.Time.TimerEvent;
@@ -25,7 +29,9 @@ export class MainScene extends Phaser.Scene {
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private selfId: string | null = null;
   private selfDisplayName = "You";
+  private selfCharacter = "char-1";
   private onLocalMove?: (x: number, y: number) => void;
+  private onPlayerClick?: (id: string) => void;
   private lastEmitAt = 0;
   private lastEmittedPos = { x: -1, y: -1 };
 
@@ -45,14 +51,18 @@ export class MainScene extends Phaser.Scene {
       .text(16, 16, "StudyXP — Lobby", { fontFamily: FONT_FAMILY, fontSize: "16px", color: "#ffffff" })
       .setDepth(10);
 
-    this.localVisual = this.createVisual(width / 2, height / 2, DEFAULT_LOCAL_COLOR, this.selfDisplayName, true);
+    this.localVisual = this.createVisual(width / 2, height / 2, this.selfCharacter, this.selfDisplayName, true);
+    this.localVisual.container.on("pointerdown", () => {
+      if (this.selfId) this.onPlayerClick?.(this.selfId);
+    });
+
     this.cursors = this.input.keyboard?.createCursorKeys();
     this.input.keyboard?.disableGlobalCapture();
   }
 
   update(time: number) {
     if (!this.localVisual || !this.cursors) return;
-    const body = this.localVisual.rect.body as Phaser.Physics.Arcade.Body;
+    const body = this.localVisual.container.body as Phaser.Physics.Arcade.Body;
     const speed = 200;
 
     body.setVelocity(0);
@@ -63,9 +73,9 @@ export class MainScene extends Phaser.Scene {
       else if (this.cursors.down.isDown) body.setVelocityY(speed);
     }
 
-    this.updateVisualPositions(this.localVisual);
+    this.updateAttachments(this.localVisual);
 
-    const { x, y } = this.localVisual.rect;
+    const { x, y } = this.localVisual.container;
     const moved = Math.abs(x - this.lastEmittedPos.x) > 0.5 || Math.abs(y - this.lastEmittedPos.y) > 0.5;
     if (moved && time - this.lastEmitAt > MOVE_EMIT_INTERVAL_MS) {
       this.lastEmitAt = time;
@@ -78,12 +88,17 @@ export class MainScene extends Phaser.Scene {
     this.onLocalMove = cb;
   }
 
-  setSelf(id: string, displayName: string) {
+  setOnPlayerClick(cb: (id: string) => void) {
+    this.onPlayerClick = cb;
+  }
+
+  setSelf(id: string, displayName: string, character: string) {
     this.selfId = id;
     this.selfDisplayName = displayName;
+    this.selfCharacter = character;
     if (this.localVisual) {
       this.localVisual.label.setText(displayName);
-      this.localVisual.rect.setFillStyle(colorForPlayerId(id));
+      this.applyCharacter(this.localVisual, character);
     }
   }
 
@@ -94,7 +109,7 @@ export class MainScene extends Phaser.Scene {
     visual.bubble?.destroy();
     visual.bubbleTimer?.remove();
 
-    visual.bubble = this.add.text(visual.rect.x, 0, text, {
+    visual.bubble = this.add.text(visual.container.x, 0, text, {
       fontFamily: FONT_FAMILY,
       fontSize: "12px",
       color: "#111111",
@@ -104,7 +119,7 @@ export class MainScene extends Phaser.Scene {
     });
     visual.bubble.setOrigin(0.5, 1);
     visual.bubble.setDepth(20);
-    this.updateVisualPositions(visual);
+    this.updateAttachments(visual);
 
     visual.bubbleTimer = this.time.delayedCall(BUBBLE_DURATION_MS, () => {
       visual.bubble?.destroy();
@@ -122,18 +137,19 @@ export class MainScene extends Phaser.Scene {
 
       let visual = this.otherVisuals.get(player.id);
       if (!visual) {
-        visual = this.createVisual(player.x, player.y, colorForPlayerId(player.id), player.displayName);
+        visual = this.createVisual(player.x, player.y, player.character, player.displayName, false, player.id);
         this.otherVisuals.set(player.id, visual);
       } else {
-        visual.rect.setPosition(player.x, player.y);
+        visual.container.setPosition(player.x, player.y);
         visual.label.setText(player.displayName);
-        this.updateVisualPositions(visual);
+        this.applyCharacter(visual, player.character);
+        this.updateAttachments(visual);
       }
     }
 
     for (const [id, visual] of this.otherVisuals) {
       if (!seen.has(id)) {
-        visual.rect.destroy();
+        visual.container.destroy();
         visual.label.destroy();
         visual.bubble?.destroy();
         visual.bubbleTimer?.remove();
@@ -142,12 +158,32 @@ export class MainScene extends Phaser.Scene {
     }
   }
 
-  private createVisual(x: number, y: number, color: number, name: string, withPhysics = false): PlayerVisual {
-    const rect = this.add.rectangle(x, y, 32, 32, color);
+  private createVisual(
+    x: number,
+    y: number,
+    character: string,
+    name: string,
+    withPhysics = false,
+    clickId?: string,
+  ): PlayerVisual {
+    const preset = getCharacterPreset(character);
+
+    const body = this.add.rectangle(0, 9, 20, 18, preset.outfit);
+    const head = this.add.rectangle(0, -8, 16, 14, preset.skin);
+    const hair = this.add.rectangle(0, -16, 18, 6, preset.hair);
+
+    const container = this.add.container(x, y, [body, head, hair]);
+    container.setSize(CHAR_WIDTH, CHAR_HEIGHT);
+    container.setInteractive({ useHandCursor: true });
+
     if (withPhysics) {
-      this.physics.add.existing(rect);
+      this.physics.add.existing(container);
     }
-    const label = this.add.text(x, y - 24, name, {
+    if (clickId) {
+      container.on("pointerdown", () => this.onPlayerClick?.(clickId));
+    }
+
+    const label = this.add.text(x, y - 27, name, {
       fontFamily: FONT_FAMILY,
       fontSize: "12px",
       color: "#ffffff",
@@ -155,11 +191,19 @@ export class MainScene extends Phaser.Scene {
       padding: { x: 4, y: 2 },
     });
     label.setOrigin(0.5, 1);
-    return { rect, label };
+
+    return { container, body, head, hair, label };
   }
 
-  private updateVisualPositions(visual: PlayerVisual) {
-    visual.label.setPosition(visual.rect.x, visual.rect.y - 24);
-    visual.bubble?.setPosition(visual.rect.x, visual.rect.y - 40);
+  private applyCharacter(visual: PlayerVisual, character: string) {
+    const preset = getCharacterPreset(character);
+    visual.body.setFillStyle(preset.outfit);
+    visual.head.setFillStyle(preset.skin);
+    visual.hair.setFillStyle(preset.hair);
+  }
+
+  private updateAttachments(visual: PlayerVisual) {
+    visual.label.setPosition(visual.container.x, visual.container.y - 27);
+    visual.bubble?.setPosition(visual.container.x, visual.container.y - 43);
   }
 }

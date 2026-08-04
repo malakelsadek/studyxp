@@ -10,13 +10,15 @@ export function useRoomState(roomId: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [timer, setTimer] = useState<TimerState>(defaultTimer());
   const [todos, setTodos] = useState<TodoItem[]>([]);
+  const [joinError, setJoinError] = useState<string | null>(null);
   const joinedRoomId = useRef<string | null>(null);
 
   useEffect(() => {
     if (!socket || !connected) return;
 
     if (joinedRoomId.current !== roomId) {
-      socket.emit("room:join", { roomId });
+      const password = sessionStorage.getItem(`studyxp.roomPassword.${roomId}`) ?? undefined;
+      socket.emit("room:join", { roomId, password });
       joinedRoomId.current = roomId;
     }
 
@@ -56,6 +58,10 @@ export function useRoomState(roomId: string) {
 
     const onTimerUpdate = (next: TimerState) => setTimer(next);
     const onTodoUpdate = ({ todos: next }: { todos: TodoItem[] }) => setTodos(next);
+    const onRoomError = ({ message }: { message: string }) => {
+      joinedRoomId.current = null;
+      setJoinError(message);
+    };
 
     socket.on("room:snapshot", onSnapshot);
     socket.on("player:joined", onPlayerJoined);
@@ -64,6 +70,7 @@ export function useRoomState(roomId: string) {
     socket.on("chat:message", onChatMessage);
     socket.on("timer:update", onTimerUpdate);
     socket.on("todo:update", onTodoUpdate);
+    socket.on("room:error", onRoomError);
 
     return () => {
       socket.off("room:snapshot", onSnapshot);
@@ -73,6 +80,7 @@ export function useRoomState(roomId: string) {
       socket.off("chat:message", onChatMessage);
       socket.off("timer:update", onTimerUpdate);
       socket.off("todo:update", onTodoUpdate);
+      socket.off("room:error", onRoomError);
     };
   }, [socket, connected, roomId]);
 
@@ -92,6 +100,7 @@ export function useRoomState(roomId: string) {
     messages,
     timer,
     todos,
+    joinError,
     move,
     sendChat,
     startTimer,

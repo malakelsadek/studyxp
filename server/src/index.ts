@@ -4,6 +4,9 @@ import cors from "cors";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 import { authRouter } from "./auth/router.js";
+import { usersRouter } from "./users/router.js";
+import { statsRouter } from "./stats/router.js";
+import { roomsRouter } from "./rooms/router.js";
 import { registerSocketHandlers } from "./socket/index.js";
 import type {
   ClientToServerEvents,
@@ -24,6 +27,9 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/auth", authRouter);
+app.use("/users", usersRouter);
+app.use("/stats", statsRouter);
+app.use("/rooms", roomsRouter);
 
 const httpServer = createServer(app);
 const io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(

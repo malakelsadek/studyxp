@@ -7,20 +7,32 @@ interface PhaserGameProps {
   players: Record<string, PlayerDTO>;
   selfId: string | null;
   selfDisplayName: string;
+  selfCharacter: string;
   messages: ChatMessage[];
   onLocalMove: (x: number, y: number) => void;
+  onPlayerClick: (id: string) => void;
 }
 
-export function PhaserGame({ players, selfId, selfDisplayName, messages, onLocalMove }: PhaserGameProps) {
+export function PhaserGame({
+  players,
+  selfId,
+  selfDisplayName,
+  selfCharacter,
+  messages,
+  onLocalMove,
+  onPlayerClick,
+}: PhaserGameProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const sceneRef = useRef<MainScene | null>(null);
   const onLocalMoveRef = useRef(onLocalMove);
   onLocalMoveRef.current = onLocalMove;
+  const onPlayerClickRef = useRef(onPlayerClick);
+  onPlayerClickRef.current = onPlayerClick;
   const playersRef = useRef(players);
   playersRef.current = players;
-  const selfRef = useRef({ selfId, selfDisplayName });
-  selfRef.current = { selfId, selfDisplayName };
+  const selfRef = useRef({ selfId, selfDisplayName, selfCharacter });
+  selfRef.current = { selfId, selfDisplayName, selfCharacter };
   const seenMessageIds = useRef<Set<string> | null>(null);
 
   useEffect(() => {
@@ -44,8 +56,9 @@ export function PhaserGame({ players, selfId, selfDisplayName, messages, onLocal
       const scene = game.scene.getScene("main") as MainScene;
       sceneRef.current = scene;
       scene.setOnLocalMove((x, y) => onLocalMoveRef.current(x, y));
+      scene.setOnPlayerClick((id) => onPlayerClickRef.current(id));
       if (selfRef.current.selfId) {
-        scene.setSelf(selfRef.current.selfId, selfRef.current.selfDisplayName);
+        scene.setSelf(selfRef.current.selfId, selfRef.current.selfDisplayName, selfRef.current.selfCharacter);
       }
       scene.syncPlayers(playersRef.current);
     });
@@ -58,8 +71,8 @@ export function PhaserGame({ players, selfId, selfDisplayName, messages, onLocal
   }, []);
 
   useEffect(() => {
-    if (selfId) sceneRef.current?.setSelf(selfId, selfDisplayName);
-  }, [selfId, selfDisplayName]);
+    if (selfId) sceneRef.current?.setSelf(selfId, selfDisplayName, selfCharacter);
+  }, [selfId, selfDisplayName, selfCharacter]);
 
   useEffect(() => {
     sceneRef.current?.syncPlayers(players);

@@ -1,33 +1,33 @@
 import { useState } from "react";
 import type { TimerMode, TimerState } from "../socket/types";
 import { TimerPanel } from "./TimerPanel";
-import { usePersonalTimer } from "./usePersonalTimer";
 import { SharedPersonalToggle, type ViewMode } from "./SharedPersonalToggle";
 
-interface TimerTileProps {
-  sharedTimer: TimerState;
-  onSharedStart: (mode: TimerMode) => void;
-  onSharedPause: () => void;
-  onSharedReset: () => void;
+interface TimerControls {
+  timer: TimerState;
+  startTimer: (mode: TimerMode) => void;
+  pauseTimer: () => void;
+  resetTimer: () => void;
 }
 
-export function TimerTile({ sharedTimer, onSharedStart, onSharedPause, onSharedReset }: TimerTileProps) {
+interface TimerTileProps {
+  shared: TimerControls;
+  personal: TimerControls;
+}
+
+export function TimerTile({ shared, personal }: TimerTileProps) {
   const [mode, setMode] = useState<ViewMode>("shared");
-  const personal = usePersonalTimer();
+  const active = mode === "shared" ? shared : personal;
 
   return (
     <div>
       <SharedPersonalToggle mode={mode} onChange={setMode} />
-      {mode === "shared" ? (
-        <TimerPanel timer={sharedTimer} onStart={onSharedStart} onPause={onSharedPause} onReset={onSharedReset} />
-      ) : (
-        <TimerPanel
-          timer={personal.timer}
-          onStart={personal.startTimer}
-          onPause={personal.pauseTimer}
-          onReset={personal.resetTimer}
-        />
-      )}
+      <TimerPanel
+        timer={active.timer}
+        onStart={active.startTimer}
+        onPause={active.pauseTimer}
+        onReset={active.resetTimer}
+      />
     </div>
   );
 }

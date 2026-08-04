@@ -1,10 +1,12 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { loginRequest, registerRequest, type AuthUser } from "../lib/api";
+import { DEFAULT_CHARACTER_ID } from "../game/characterPresets";
 
 export interface SessionUser {
   id: string;
   displayName: string;
   isGuest: boolean;
+  character: string;
   email?: string;
 }
 
@@ -16,8 +18,10 @@ interface AuthState {
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, displayName: string) => Promise<void>;
-  continueAsGuest: (displayName: string) => void;
+  continueAsGuest: (displayName: string, character?: string) => void;
   logout: () => void;
+  updateDisplayName: (displayName: string) => void;
+  updateCharacter: (character: string) => void;
 }
 
 const STORAGE_KEY = "studyxp.auth";
@@ -35,7 +39,13 @@ function loadStoredAuth(): AuthState {
 }
 
 function toSessionUser(user: AuthUser): SessionUser {
-  return { id: user.id, displayName: user.displayName, email: user.email, isGuest: false };
+  return {
+    id: user.id,
+    displayName: user.displayName,
+    email: user.email,
+    character: user.character,
+    isGuest: false,
+  };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -55,17 +65,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({ token: res.token, user: toSessionUser(res.user) });
   };
 
-  const continueAsGuest = (displayName: string) => {
+  const continueAsGuest = (displayName: string, character: string = DEFAULT_CHARACTER_ID) => {
     setState({
       token: null,
-      user: { id: `local-guest-${Date.now()}`, displayName, isGuest: true },
+      user: { id: `local-guest-${Date.now()}`, displayName, character, isGuest: true },
     });
   };
 
   const logout = () => setState({ token: null, user: null });
 
+  const updateDisplayName = (displayName: string) => {
+    setState((prev) => (prev.user ? { ...prev, user: { ...prev.user, displayName } } : prev));
+  };
+
+  const updateCharacter = (character: string) => {
+    setState((prev) => (prev.user ? { ...prev, user: { ...prev.user, character } } : prev));
+  };
+
   return (
-    <AuthContext.Provider value={{ ...state, login, register, continueAsGuest, logout }}>
+    <AuthContext.Provider
+      value={{ ...state, login, register, continueAsGuest, logout, updateDisplayName, updateCharacter }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import "./LoginPage.css";
@@ -6,8 +6,12 @@ import "./LoginPage.css";
 type Mode = "login" | "register";
 
 export function LoginPage() {
-  const { login, register, continueAsGuest } = useAuth();
+  const { user, login, register, continueAsGuest } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) navigate("/dashboard");
+  }, [user, navigate]);
 
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
@@ -27,7 +31,7 @@ export function LoginPage() {
       } else {
         await register(email, password, displayName);
       }
-      navigate("/room/lobby");
+      navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -39,7 +43,7 @@ export function LoginPage() {
     e.preventDefault();
     if (!guestName.trim()) return;
     continueAsGuest(guestName.trim());
-    navigate("/room/lobby");
+    navigate("/dashboard");
   };
 
   return (

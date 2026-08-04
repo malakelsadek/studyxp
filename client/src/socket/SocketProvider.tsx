@@ -26,10 +26,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
   const socket = useMemo<AppSocket | null>(() => {
     if (!user) return null;
-    const auth = user.isGuest ? { guestName: user.displayName } : { token };
+    const auth = user.isGuest ? { guestName: user.displayName, character: user.character } : { token };
     return io(SERVER_URL, { auth, autoConnect: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, token]);
+  }, [user?.id, user?.character, token]);
 
   useEffect(() => {
     if (!socket) return;

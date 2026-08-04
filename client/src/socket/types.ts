@@ -13,6 +13,7 @@ export interface PlayerDTO {
   id: string;
   displayName: string;
   isGuest: boolean;
+  character: string;
   x: number;
   y: number;
 }
@@ -42,7 +43,7 @@ export interface RoomSnapshot {
 }
 
 export interface ClientToServerEvents {
-  "room:join": (payload: { roomId: string }) => void;
+  "room:join": (payload: { roomId: string; password?: string }) => void;
   "player:move": (payload: { x: number; y: number }) => void;
   "chat:send": (payload: { text: string }) => void;
   "timer:start": (payload: { mode: TimerMode }) => void;
