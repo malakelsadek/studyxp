@@ -7,4 +7,6 @@ build/
 .DS_Store
 /server/generated/
 /server/node_modules/
+/server/uploads/
 /client/node_modules/
+/background_pictures/

@@ -66,6 +66,9 @@ export function RoomPage() {
     messages,
     timer,
     todos,
+    name,
+    backgroundUrl,
+    maxCapacity,
     joinError,
     move,
     sendChat,
@@ -75,6 +78,9 @@ export function RoomPage() {
     addTodo,
     toggleTodo,
     removeTodo,
+    broadcastBackground,
+    broadcastName,
+    setMaxCapacity,
   } = useRoomState(roomId);
 
   const personalTimer = usePersonalTimer();
@@ -100,13 +106,15 @@ export function RoomPage() {
   return (
     <div className="room-page">
       <div className="room-topbar">
-        <span>Room: {roomId}</span>
-        <span>{connected ? `Connected — ${playerCount} here` : "Connecting..."}</span>
+        <span>Room: {name || roomId}</span>
+        <span>{connected ? `Connected — ${playerCount}/${maxCapacity} here` : "Connecting..."}</span>
         <span>
           {user.displayName} {user.isGuest && "(guest)"}
         </span>
-        <button onClick={() => navigate("/dashboard")}>Dashboard</button>
-        <button onClick={() => { logout(); navigate("/"); }}>Leave</button>
+        <div className="room-topbar-actions">
+          <button onClick={() => navigate("/dashboard")}>Dashboard</button>
+          <button onClick={() => { logout(); navigate("/"); }}>Leave</button>
+        </div>
       </div>
 
       <div className="room-body">
@@ -115,13 +123,14 @@ export function RoomPage() {
           selfId={selfId}
           selfDisplayName={user.displayName}
           selfCharacter={user.character}
+          backgroundUrl={backgroundUrl}
           messages={messages}
           onLocalMove={move}
           onPlayerClick={setViewingProfileId}
         />
 
         {openPanels.timer && (
-          <Tile title="Timer" initialPosition={{ x: 880, y: 16 }} onClose={() => togglePanel("timer")}>
+          <Tile title="Timer" initialPosition={{ x: 880, y: 72 }} onClose={() => togglePanel("timer")}>
             <TimerTile
               shared={{ timer, startTimer, pauseTimer, resetTimer }}
               personal={personalTimer}
@@ -144,7 +153,7 @@ export function RoomPage() {
         {openPanels.shortcuts && (
           <Tile
             title="Keyboard shortcuts"
-            initialPosition={{ x: 480, y: 16 }}
+            initialPosition={{ x: 480, y: 72 }}
             onClose={() => togglePanel("shortcuts")}
           >
             <ShortcutsPanel />
@@ -157,7 +166,16 @@ export function RoomPage() {
             initialPosition={{ x: 480, y: 260 }}
             onClose={() => togglePanel("settings")}
           >
-            <RoomSettings roomId={roomId} token={token} />
+            <RoomSettings
+              roomId={roomId}
+              token={token}
+              currentName={name}
+              onNameChange={broadcastName}
+              currentBackgroundUrl={backgroundUrl}
+              onBackgroundChange={broadcastBackground}
+              currentCapacity={maxCapacity}
+              onCapacityChange={setMaxCapacity}
+            />
           </Tile>
         )}
 

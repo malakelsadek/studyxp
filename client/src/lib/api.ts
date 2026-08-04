@@ -1,5 +1,9 @@
 const SERVER_URL = import.meta.env.VITE_SERVER_URL ?? "http://localhost:4000";
 
+export function resolveAssetUrl(path: string): string {
+  return path.startsWith("http") ? path : `${SERVER_URL}${path}`;
+}
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -33,7 +37,11 @@ export interface UserProfile {
 export interface RoomSummary {
   id: string;
   name: string;
+  maxCapacity: number;
+  currentCount: number;
 }
+
+export const MAX_ROOM_CAPACITY = 20;
 
 async function handleResponse<T>(res: Response): Promise<T> {
   const data = await res.json();
@@ -107,4 +115,31 @@ export function changeRoomPassword(
   newPassword: string,
 ) {
   return patchJson<{ ok: true }>(`/rooms/${roomId}/password`, { oldPassword, newPassword }, token);
+}
+
+export async function uploadRoomBackground(token: string, roomId: string, file: File) {
+  const formData = new FormData();
+  formData.append("background", file);
+  const res = await fetch(`${SERVER_URL}/rooms/${roomId}/background`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  return handleResponse<{ backgroundUrl: string }>(res);
+}
+
+export async function resetRoomBackground(token: string, roomId: string) {
+  const res = await fetch(`${SERVER_URL}/rooms/${roomId}/background`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse<{ backgroundUrl: null }>(res);
+}
+
+export function changeRoomCapacity(token: string, roomId: string, maxCapacity: number) {
+  return patchJson<{ maxCapacity: number }>(`/rooms/${roomId}/capacity`, { maxCapacity }, token);
+}
+
+export function changeRoomName(token: string, roomId: string, name: string) {
+  return patchJson<{ name: string }>(`/rooms/${roomId}/name`, { name }, token);
 }

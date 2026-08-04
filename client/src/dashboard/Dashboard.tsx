@@ -86,9 +86,16 @@ export function Dashboard() {
             <p className="dashboard-muted">Loading rooms...</p>
           ) : (
             <ul className="room-list">
-              {rooms.map((room) => (
+              {rooms.map((room) => {
+                const isFull = room.currentCount >= room.maxCapacity;
+                return (
                 <li key={room.id} className="room-list-item">
-                  <span>{room.name}</span>
+                  <span>
+                    {room.name}{" "}
+                    <span className="room-occupancy">
+                      ({room.currentCount}/{room.maxCapacity})
+                    </span>
+                  </span>
                   {joiningRoomId === room.id ? (
                     <form className="room-join-form" onSubmit={(e) => handleJoinSubmit(e, room.id)}>
                       <input
@@ -111,17 +118,19 @@ export function Dashboard() {
                     </form>
                   ) : (
                     <button
+                      disabled={isFull}
                       onClick={() => {
                         setJoiningRoomId(room.id);
                         setPasswordDraft("");
                         setError(null);
                       }}
                     >
-                      Join
+                      {isFull ? "Full" : "Join"}
                     </button>
                   )}
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </section>

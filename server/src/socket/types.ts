@@ -47,6 +47,9 @@ export interface RoomSnapshot {
   timer: TimerState;
   messages: ChatMessage[];
   todos: TodoItem[];
+  name: string;
+  backgroundUrl: string | null;
+  maxCapacity: number;
 }
 
 export interface ClientToServerEvents {
@@ -59,6 +62,8 @@ export interface ClientToServerEvents {
   "todo:add": (payload: { text: string }) => void;
   "todo:toggle": (payload: { id: string }) => void;
   "todo:remove": (payload: { id: string }) => void;
+  "room:background": (payload: { url: string | null }) => void;
+  "room:name": (payload: { name: string }) => void;
 }
 
 export interface ServerToClientEvents {
@@ -69,6 +74,8 @@ export interface ServerToClientEvents {
   "chat:message": (payload: ChatMessage) => void;
   "timer:update": (payload: TimerState) => void;
   "todo:update": (payload: { todos: TodoItem[] }) => void;
+  "room:background": (payload: { url: string | null }) => void;
+  "room:name": (payload: { name: string }) => void;
   "room:error": (payload: { message: string }) => void;
 }
 
