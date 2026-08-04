@@ -1,0 +1,130 @@
+.dashboard-page {
+  min-height: 100vh;
+  background: #1e1e2e;
+  color: #eee;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: #2a2a3d;
+}
+
+.dashboard-topbar button {
+  margin-left: auto;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #f87171;
+  color: #111;
+  cursor: pointer;
+}
+
+.dashboard-body {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dashboard-section h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.dashboard-muted {
+  color: #888;
+}
+
+.dashboard-error {
+  color: #f87171;
+}
+
+.character-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+}
+
+.character-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px;
+  background: #2a2a3d;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  color: #eee;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.character-option.selected {
+  border-color: #4ade80;
+}
+
+.room-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.room-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #2a2a3d;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.room-list-item > button {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #4ade80;
+  color: #111;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.room-join-form {
+  display: flex;
+  gap: 6px;
+}
+
+.room-join-form input {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #1e1e2e;
+  color: #eee;
+  width: 140px;
+}
+
+.room-join-form button {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: #4ade80;
+  color: #111;
+  cursor: pointer;
+}
+
+.room-join-form button[type="button"] {
+  background: #1e1e2e;
+  color: #eee;
+}

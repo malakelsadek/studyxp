@@ -8,9 +8,32 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String
+  displayName   String
+  bio           String         @default("")
+  interests     String[]       @default([])
+  character     String         @default("char-1")
+  createdAt     DateTime       @default(now())
+  studySessions StudySession[]
+}
+
+model Room {
+  id           String   @id
+  name         String
   passwordHash String
-  displayName  String
   createdAt    DateTime @default(now())
+}
+
+model StudySession {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  durationMs Int
+  mode       String
+  roomId     String
+  startedAt  DateTime @default(now())
+
+  @@index([userId, startedAt])
 }
