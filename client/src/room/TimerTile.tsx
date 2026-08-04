@@ -8,6 +8,8 @@ interface TimerControls {
   startTimer: (mode: TimerMode) => void;
   pauseTimer: () => void;
   resetTimer: () => void;
+  switchPhase: () => void;
+  configureDurations: (workDurationMs: number, breakDurationMs: number) => void;
 }
 
 interface TimerTileProps {
@@ -27,6 +29,8 @@ export function TimerTile({ shared, personal }: TimerTileProps) {
         onStart={active.startTimer}
         onPause={active.pauseTimer}
         onReset={active.resetTimer}
+        onSwitchPhase={active.switchPhase}
+        onConfigureDurations={active.configureDurations}
       />
     </div>
   );

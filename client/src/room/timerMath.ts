@@ -1,12 +1,19 @@
 import type { TimerMode, TimerState } from "../socket/types";
 
-export const POMODORO_DURATION_MS = 25 * 60 * 1000;
+export const DEFAULT_WORK_MS = 25 * 60 * 1000;
+export const DEFAULT_BREAK_MS = 5 * 60 * 1000;
 
-export function defaultTimer(mode: TimerMode = "pomodoro"): TimerState {
+export function defaultTimer(
+  mode: TimerMode = "pomodoro",
+  workDurationMs = DEFAULT_WORK_MS,
+  breakDurationMs = DEFAULT_BREAK_MS,
+): TimerState {
   return {
     mode,
+    phase: "work",
     status: "idle",
-    durationMs: mode === "pomodoro" ? POMODORO_DURATION_MS : 0,
+    workDurationMs,
+    breakDurationMs,
     elapsedMsAtStart: 0,
     startedAt: null,
   };
@@ -17,6 +24,11 @@ export function computeElapsedMs(timer: TimerState): number {
     return timer.elapsedMsAtStart + (Date.now() - timer.startedAt);
   }
   return timer.elapsedMsAtStart;
+}
+
+export function getActiveDurationMs(timer: TimerState): number {
+  if (timer.mode !== "pomodoro") return 0;
+  return timer.phase === "work" ? timer.workDurationMs : timer.breakDurationMs;
 }
 
 export function formatMs(ms: number): string {

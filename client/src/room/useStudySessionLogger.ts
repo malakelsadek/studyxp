@@ -10,7 +10,7 @@ export function useStudySessionLogger(timer: TimerState, roomId: string, token: 
 
   useEffect(() => {
     const prev = prevTimerRef.current;
-    if (prev.status === "running" && timer.status !== "running" && token) {
+    if (prev.status === "running" && timer.status !== "running" && prev.phase !== "break" && token) {
       const elapsedMs = computeElapsedMs(prev);
       if (elapsedMs >= MIN_LOGGABLE_MS) {
         postStudySession(token, { durationMs: elapsedMs, mode: prev.mode, roomId }).catch(() => {
