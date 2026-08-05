@@ -34,6 +34,7 @@ export interface UserProfile {
   character: string;
   ownedCharacters: string[];
   coins: number;
+  tasksCompleted: number;
   createdAt: string;
   stats: UserStats;
 }

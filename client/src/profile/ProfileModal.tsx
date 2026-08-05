@@ -161,6 +161,10 @@ export function ProfileModal({
                 <div className="stat-value">🔥 {profile.stats.streak}</div>
                 <div className="stat-label">Day streak</div>
               </div>
+              <div className="stat-tile">
+                <div className="stat-value">✅ {profile.tasksCompleted}</div>
+                <div className="stat-label">Tasks done</div>
+              </div>
             </div>
 
             <ActivityHeatmap heatmap={profile.stats.heatmap} />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { PhaserGame } from "../game/PhaserGame";
@@ -12,6 +12,13 @@ import { ShortcutsPanel } from "./ShortcutsPanel";
 import { RoomSettings } from "./RoomSettings";
 import { LeaderboardPanel } from "./LeaderboardPanel";
 import { OutfitPanel } from "./OutfitPanel";
+import { CalendarPanel } from "./CalendarPanel";
+import { MusicPanel } from "./MusicPanel";
+import { CelebrationPopup } from "./CelebrationPopup";
+import { useTimerSoundPreference } from "./useTimerSoundPreference";
+import { useTimerCompletionSound } from "./useTimerCompletionSound";
+import { useAllTasksCelebration } from "./useAllTasksCelebration";
+import { playPartySound } from "./timerSounds";
 import { SideNav, type PanelKey } from "./SideNav";
 import { Tile } from "./Tile";
 import { ProfileModal } from "../profile/ProfileModal";
@@ -22,15 +29,18 @@ export function RoomPage() {
   const { user, token, logout, setCoins } = useAuth();
   const navigate = useNavigate();
   const [openPanels, setOpenPanels] = useState<Record<PanelKey, boolean>>({
+    settings: false,
+    shortcuts: false,
     timer: false,
     todo: false,
-    shortcuts: false,
-    settings: false,
+    calendar: false,
+    music: false,
     outfit: false,
   });
   const [chatActive, setChatActive] = useState(false);
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   useEffect(() => {
     if (!user) navigate("/");
@@ -56,6 +66,9 @@ export function RoomPage() {
       } else if (key === "d") {
         e.preventDefault();
         setOpenPanels((prev) => ({ ...prev, todo: !prev.todo }));
+      } else if (key === "b") {
+        e.preventDefault();
+        setOpenPanels((prev) => ({ ...prev, calendar: !prev.calendar }));
       }
     };
 
@@ -65,6 +78,7 @@ export function RoomPage() {
 
   const {
     connected,
+    joined,
     selfId,
     players,
     messages,
@@ -72,6 +86,8 @@ export function RoomPage() {
     todos,
     personalTodos,
     leaderboard,
+    timeBlocks,
+    musicUrl,
     name,
     backgroundUrl,
     maxCapacity,
@@ -95,12 +111,25 @@ export function RoomPage() {
     broadcastName,
     setMaxCapacity,
     logStudyTime,
+    addTimeBlock,
+    removeTimeBlock,
+    setMusicUrl,
   } = useRoomState(roomId);
 
   const personalTimer = usePersonalTimer();
+  const { soundId, setSoundId, play: playTimerDoneSound } = useTimerSoundPreference();
 
   useStudySessionLogger(timer, roomId, token, logStudyTime, setCoins);
   useStudySessionLogger(personalTimer.timer, roomId, token, logStudyTime, setCoins);
+  useTimerCompletionSound(timer, playTimerDoneSound);
+  useTimerCompletionSound(personalTimer.timer, playTimerDoneSound);
+
+  const celebrate = useCallback(() => {
+    playPartySound();
+    setShowCelebration(true);
+  }, []);
+  useAllTasksCelebration(todos, celebrate);
+  useAllTasksCelebration(selfId ? (personalTodos[selfId] ?? []) : [], celebrate);
 
   useEffect(() => {
     if (joinError) {
@@ -121,12 +150,15 @@ export function RoomPage() {
     <div className="room-page">
       <div className="room-topbar">
         <span>Room: {name || roomId}</span>
-        <span>{connected ? `Connected — ${playerCount}/${maxCapacity} here` : "Connecting..."}</span>
+        <span>
+          {joined ? `Connected — ${playerCount}/${maxCapacity} here` : connected ? "Joining room..." : "Connecting..."}
+        </span>
         <span>
           {user.displayName} {user.isGuest && "(guest)"}
         </span>
         <div className="room-topbar-actions">
           <button onClick={() => navigate("/dashboard")}>Dashboard</button>
+          <span className="room-topbar-coins">🪙 {user.coins}</span>
           <button onClick={() => setShowLeaderboard((prev) => !prev)}>Leaderboard</button>
           <button onClick={() => { logout(); navigate("/"); }}>Leave</button>
         </div>
@@ -144,6 +176,12 @@ export function RoomPage() {
           onPlayerClick={setViewingProfileId}
         />
 
+        {!joined && (
+          <div className="room-joining-overlay">
+            <p>{joinError ?? "Joining room..."}</p>
+          </div>
+        )}
+
         {openPanels.timer && (
           <Tile title="Timer" initialPosition={{ x: 880, y: 72 }} onClose={() => togglePanel("timer")}>
             <TimerTile
@@ -156,6 +194,8 @@ export function RoomPage() {
                 configureDurations: configureTimer,
               }}
               personal={personalTimer}
+              soundId={soundId}
+              onSoundChange={setSoundId}
             />
           </Tile>
         )}
@@ -214,6 +254,28 @@ export function RoomPage() {
           </Tile>
         )}
 
+        {openPanels.calendar && (
+          <Tile
+            title="Calendar"
+            initialPosition={{ x: 860, y: 72 }}
+            onClose={() => togglePanel("calendar")}
+            width={340}
+          >
+            <CalendarPanel
+              timeBlocks={timeBlocks}
+              personalTodos={selfId ? (personalTodos[selfId] ?? []) : []}
+              onAdd={addTimeBlock}
+              onRemove={removeTimeBlock}
+            />
+          </Tile>
+        )}
+
+        {openPanels.music && (
+          <Tile title="Music" initialPosition={{ x: 860, y: 260 }} onClose={() => togglePanel("music")} width={320}>
+            <MusicPanel musicUrl={musicUrl} onSetMusic={setMusicUrl} canEdit={!user.isGuest} />
+          </Tile>
+        )}
+
         {showLeaderboard && (
           <Tile
             title="Leaderboard"
@@ -227,6 +289,8 @@ export function RoomPage() {
         <ChatOverlay messages={messages} onSend={sendChat} active={chatActive} />
 
         <SideNav openPanels={openPanels} onToggle={togglePanel} />
+
+        {showCelebration && <CelebrationPopup onDismiss={() => setShowCelebration(false)} />}
 
         {viewingProfileId && viewingPlayer && (
           <ProfileModal

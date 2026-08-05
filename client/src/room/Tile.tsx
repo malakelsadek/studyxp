@@ -5,9 +5,10 @@ interface TileProps {
   initialPosition: { x: number; y: number };
   onClose: () => void;
   children: ReactNode;
+  width?: number;
 }
 
-export function Tile({ title, initialPosition, onClose, children }: TileProps) {
+export function Tile({ title, initialPosition, onClose, children, width }: TileProps) {
   const [position, setPosition] = useState(initialPosition);
   const dragState = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(
     null,
@@ -39,7 +40,7 @@ export function Tile({ title, initialPosition, onClose, children }: TileProps) {
   };
 
   return (
-    <div className="tile" style={{ left: position.x, top: position.y }}>
+    <div className="tile" style={{ left: position.x, top: position.y, width }}>
       <div className="tile-header" onMouseDown={handleMouseDown}>
         <span>{title}</span>
         <button onClick={onClose} aria-label={`Close ${title}`}>

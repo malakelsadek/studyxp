@@ -5,6 +5,7 @@ import type {
   LeaderboardEntry,
   PersonalTodoItem,
   PlayerDTO,
+  TimeBlock,
   TimerMode,
   TimerState,
   TodoItem,
@@ -21,10 +22,13 @@ export function useRoomState(roomId: string) {
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [personalTodos, setPersonalTodos] = useState<Record<string, PersonalTodoItem[]>>({});
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
+  const [musicUrl, setMusicUrlState] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
   const [maxCapacity, setMaxCapacity] = useState(20);
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [joined, setJoined] = useState(false);
   const joinedRoomId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -34,6 +38,7 @@ export function useRoomState(roomId: string) {
       const password = sessionStorage.getItem(`studyxp.roomPassword.${roomId}`) ?? undefined;
       socket.emit("room:join", { roomId, password });
       joinedRoomId.current = roomId;
+      setJoined(false);
     }
 
     const onSnapshot = (snapshot: {
@@ -44,6 +49,8 @@ export function useRoomState(roomId: string) {
       todos: TodoItem[];
       personalTodos: Record<string, PersonalTodoItem[]>;
       leaderboard: LeaderboardEntry[];
+      timeBlocks: TimeBlock[];
+      musicUrl: string | null;
       name: string;
       backgroundUrl: string | null;
       maxCapacity: number;
@@ -55,9 +62,12 @@ export function useRoomState(roomId: string) {
       setTodos(snapshot.todos);
       setPersonalTodos(snapshot.personalTodos);
       setLeaderboard(snapshot.leaderboard);
+      setTimeBlocks(snapshot.timeBlocks);
+      setMusicUrlState(snapshot.musicUrl);
       setName(snapshot.name);
       setBackgroundUrl(snapshot.backgroundUrl ? resolveAssetUrl(snapshot.backgroundUrl) : null);
       setMaxCapacity(snapshot.maxCapacity);
+      setJoined(true);
     };
 
     const onPlayerJoined = ({ player }: { player: PlayerDTO }) => {
@@ -94,8 +104,11 @@ export function useRoomState(roomId: string) {
     const onPlayerCharacter = ({ id, character }: { id: string; character: string }) => {
       setPlayers((prev) => (prev[id] ? { ...prev, [id]: { ...prev[id], character } } : prev));
     };
+    const onTimeBlockUpdate = ({ timeBlocks: next }: { timeBlocks: TimeBlock[] }) => setTimeBlocks(next);
+    const onMusicUpdate = ({ url }: { url: string | null }) => setMusicUrlState(url);
     const onRoomError = ({ message }: { message: string }) => {
       joinedRoomId.current = null;
+      setJoined(false);
       setJoinError(message);
     };
 
@@ -111,6 +124,8 @@ export function useRoomState(roomId: string) {
     socket.on("room:name", onNameUpdate);
     socket.on("leaderboard:update", onLeaderboardUpdate);
     socket.on("player:character", onPlayerCharacter);
+    socket.on("timeblock:update", onTimeBlockUpdate);
+    socket.on("room:music", onMusicUpdate);
     socket.on("room:error", onRoomError);
 
     return () => {
@@ -126,6 +141,8 @@ export function useRoomState(roomId: string) {
       socket.off("room:name", onNameUpdate);
       socket.off("leaderboard:update", onLeaderboardUpdate);
       socket.off("player:character", onPlayerCharacter);
+      socket.off("timeblock:update", onTimeBlockUpdate);
+      socket.off("room:music", onMusicUpdate);
       socket.off("room:error", onRoomError);
     };
   }, [socket, connected, roomId]);
@@ -151,9 +168,14 @@ export function useRoomState(roomId: string) {
   const broadcastBackground = (url: string | null) => socket?.emit("room:background", { url });
   const broadcastName = (nextName: string) => socket?.emit("room:name", { name: nextName });
   const logStudyTime = (durationMs: number) => socket?.emit("study:log", { durationMs });
+  const addTimeBlock = (startMinute: number, endMinute: number, label: string, tasks: string[], date: string) =>
+    socket?.emit("timeblock:add", { date, startMinute, endMinute, label, tasks });
+  const removeTimeBlock = (id: string) => socket?.emit("timeblock:remove", { id });
+  const setMusicUrl = (url: string | null) => socket?.emit("room:music", { url });
 
   return {
     connected,
+    joined,
     selfId,
     players,
     messages,
@@ -161,6 +183,8 @@ export function useRoomState(roomId: string) {
     todos,
     personalTodos,
     leaderboard,
+    timeBlocks,
+    musicUrl,
     name,
     backgroundUrl,
     maxCapacity,
@@ -184,5 +208,8 @@ export function useRoomState(roomId: string) {
     broadcastName,
     setMaxCapacity,
     logStudyTime,
+    addTimeBlock,
+    removeTimeBlock,
+    setMusicUrl,
   };
 }

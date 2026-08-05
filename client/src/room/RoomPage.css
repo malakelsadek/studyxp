@@ -38,6 +38,17 @@
   color: #eee;
 }
 
+.room-topbar-coins {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  background: #2a2a3d;
+  border: 2px solid #0d0d14;
+  color: #facc15;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .room-body {
   position: absolute;
   inset: 0;
@@ -46,6 +57,19 @@
 .room-body > div:first-child {
   width: 100%;
   height: 100%;
+}
+
+.room-joining-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 13, 20, 0.6);
+  font-family: "Press Start 2P", "Courier New", monospace;
+  font-size: 13px;
+  color: #eee;
 }
 
 .side-nav {
@@ -190,7 +214,8 @@
 }
 
 .timer-controls button {
-  padding: 8px 10px;
+  padding: 6px 10px;
+  font-size: 11px;
   background: #4ade80;
   color: #111;
 }
@@ -200,8 +225,21 @@
   cursor: not-allowed;
 }
 
+.timer-more-toggle {
+  background: #1e1e2e !important;
+  color: #aaa !important;
+}
+
+.timer-more {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 2px solid #1e1e2e;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .timer-durations {
-  margin-top: 10px;
   text-align: center;
 }
 
@@ -239,6 +277,23 @@
   padding: 6px 10px;
   background: #4ade80;
   color: #111;
+}
+
+.timer-sound-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: #aaa;
+}
+
+.timer-sound-picker select {
+  background: #1e1e2e;
+  color: #eee;
+  border: 2px solid #0d0d14;
+  padding: 4px 6px;
+  font-family: "Courier New", monospace;
 }
 
 .chat-overlay {
@@ -493,6 +548,25 @@
   white-space: nowrap;
 }
 
+.leaderboard-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.leaderboard-tabs button {
+  flex: 1;
+  padding: 6px;
+  background: #1e1e2e;
+  color: #aaa;
+  font-size: 9px;
+}
+
+.leaderboard-tabs button.active {
+  background: #4ade80;
+  color: #111;
+}
+
 .leaderboard-list {
   list-style: none;
   margin: 0;
@@ -530,9 +604,10 @@
   white-space: nowrap;
 }
 
-.leaderboard-time {
+.leaderboard-metric {
   color: #4ade80;
   font-weight: bold;
+  white-space: nowrap;
 }
 
 .outfit-grid {
@@ -611,4 +686,345 @@
   background: none;
   color: #eee;
   font-size: 11px;
+}
+
+.calendar-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.calendar-day-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.calendar-day-nav button {
+  padding: 4px 10px;
+  background: #1e1e2e;
+  color: #eee;
+  font-size: 14px;
+}
+
+.calendar-day-nav button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.calendar-day-label {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  color: #4ade80;
+  font-weight: bold;
+}
+
+.calendar-now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #f87171;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.calendar-now-line::before {
+  content: "";
+  position: absolute;
+  left: 46px;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f87171;
+}
+
+.calendar-track {
+  height: 360px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #1e1e2e;
+  border: 2px solid #0d0d14;
+  cursor: crosshair;
+  user-select: none;
+}
+
+.calendar-track-inner {
+  position: relative;
+}
+
+.calendar-hour-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 60px;
+  border-top: 1px solid #33334a;
+}
+
+.calendar-hour-label {
+  position: absolute;
+  top: -6px;
+  left: 4px;
+  font-size: 9px;
+  color: #666;
+  background: #1e1e2e;
+  padding: 0 3px;
+  pointer-events: none;
+}
+
+.timeblock-bar {
+  position: absolute;
+  left: 52px;
+  right: 6px;
+  background: #2f4a37;
+  border: 2px solid #4ade80;
+  border-radius: 2px;
+  padding: 3px 6px;
+  overflow: hidden;
+  font-size: 10px;
+  color: #eee;
+}
+
+.timeblock-bar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.timeblock-bar-time {
+  color: #4ade80;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeblock-bar-remove {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #f87171;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.timeblock-bar-label {
+  margin-top: 2px;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeblock-bar-tasks {
+  margin-top: 2px;
+  color: #aaa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeblock-ghost {
+  position: absolute;
+  left: 52px;
+  right: 6px;
+  background: rgba(74, 222, 128, 0.25);
+  border: 2px dashed #4ade80;
+  border-radius: 2px;
+  padding: 3px 6px;
+  font-size: 10px;
+  color: #eee;
+  pointer-events: none;
+}
+
+.calendar-hint {
+  margin: 0;
+  font-size: 11px;
+  color: #888;
+  text-align: center;
+}
+
+.timeblock-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 2px solid #1e1e2e;
+  padding-top: 10px;
+}
+
+.timeblock-form-range {
+  font-size: 12px;
+  color: #4ade80;
+  font-weight: bold;
+  text-align: center;
+}
+
+.timeblock-form input {
+  padding: 8px;
+  background: #1e1e2e;
+  color: #eee;
+  font-family: "Courier New", monospace;
+}
+
+.timeblock-task-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 100px;
+  overflow-y: auto;
+  padding: 6px;
+  background: #1e1e2e;
+  border: 2px solid #0d0d14;
+}
+
+.timeblock-task-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.timeblock-form-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.timeblock-form-actions button:first-child {
+  flex: 1;
+  padding: 8px 12px;
+  background: #4ade80;
+  color: #111;
+}
+
+.timeblock-form-actions button:last-child {
+  padding: 8px 12px;
+  background: #1e1e2e;
+  color: #eee;
+}
+
+.music-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.music-embed-wrapper {
+  position: relative;
+  width: 100%;
+  background: #1e1e2e;
+  border: 2px solid #0d0d14;
+  overflow: hidden;
+}
+
+.music-embed-wrapper iframe {
+  width: 100%;
+  border: none;
+  display: block;
+}
+
+.music-embed-wrapper.youtube {
+  aspect-ratio: 16 / 9;
+}
+
+.music-embed-wrapper.youtube iframe {
+  height: 100%;
+}
+
+.music-embed-wrapper.spotify iframe {
+  height: 152px;
+}
+
+.music-form {
+  display: flex;
+  gap: 6px;
+}
+
+.music-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px;
+  background: #1e1e2e;
+  color: #eee;
+  font-family: "Courier New", monospace;
+}
+
+.music-form button {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  background: #4ade80;
+  color: #111;
+}
+
+.music-clear {
+  padding: 6px 10px;
+  background: #1e1e2e;
+  color: #f87171;
+}
+
+.celebration-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 13, 20, 0.55);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.confetti-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -20px;
+  width: 8px;
+  height: 14px;
+  opacity: 0.9;
+  animation-name: confetti-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes confetti-fall {
+  from {
+    transform: translateY(-20px) rotate(0deg);
+  }
+  to {
+    transform: translateY(110vh) rotate(360deg);
+  }
+}
+
+.celebration-message {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  background: #2a2a3d;
+  border: 3px solid #4ade80;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.5);
+  padding: 28px 36px;
+  font-family: "Press Start 2P", "Courier New", monospace;
+}
+
+.celebration-title {
+  font-size: 16px;
+  color: #4ade80;
+  margin-bottom: 10px;
+}
+
+.celebration-subtitle {
+  font-size: 11px;
+  color: #ccc;
 }

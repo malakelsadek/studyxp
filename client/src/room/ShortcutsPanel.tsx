@@ -3,6 +3,7 @@ const SHORTCUTS: Array<{ keys: string; description: string }> = [
   { keys: "Esc", description: "Close chat" },
   { keys: "Alt + T", description: "Toggle timer" },
   { keys: "Alt + D", description: "Toggle to-do list" },
+  { keys: "Alt + B", description: "Toggle calendar" },
 ];
 
 export function ShortcutsPanel() {
