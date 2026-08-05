@@ -26,7 +26,7 @@ export function OutfitPanel({ currentCharacter, ownedCharacters }: OutfitPanelPr
         ))}
       </div>
       {owned.length < CHARACTER_PRESETS.length && (
-        <p className="profile-muted outfit-hint">More outfits are available in the Dashboard store.</p>
+        <p className="profile-muted outfit-hint">More outfits are available in the Home store.</p>
       )}
     </div>
   );

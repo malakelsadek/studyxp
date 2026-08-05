@@ -157,8 +157,8 @@ export function RoomPage() {
           {user.displayName} {user.isGuest && "(guest)"}
         </span>
         <div className="room-topbar-actions">
-          <button onClick={() => navigate("/dashboard")}>Dashboard</button>
           <span className="room-topbar-coins">🪙 {user.coins}</span>
+          <button onClick={() => navigate("/dashboard")}>Home</button>
           <button onClick={() => setShowLeaderboard((prev) => !prev)}>Leaderboard</button>
           <button onClick={() => { logout(); navigate("/"); }}>Leave</button>
         </div>
