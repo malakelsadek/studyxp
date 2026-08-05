@@ -9,4 +9,4 @@ build/
 /server/node_modules/
 /server/uploads/
 /client/node_modules/
-/background_pictures/
+/assets/reference/

@@ -1,12 +1,14 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { loginRequest, registerRequest, type AuthUser } from "../lib/api";
-import { DEFAULT_CHARACTER_ID } from "../game/characterPresets";
+import { DEFAULT_CHARACTER_ID, FREE_CHARACTER_IDS } from "../game/characterPresets";
 
 export interface SessionUser {
   id: string;
   displayName: string;
   isGuest: boolean;
   character: string;
+  ownedCharacters: string[];
+  coins: number;
   email?: string;
 }
 
@@ -22,6 +24,8 @@ interface AuthContextValue extends AuthState {
   logout: () => void;
   updateDisplayName: (displayName: string) => void;
   updateCharacter: (character: string) => void;
+  applyPurchase: (ownedCharacters: string[], coins: number) => void;
+  setCoins: (coins: number) => void;
 }
 
 const STORAGE_KEY = "studyxp.auth";
@@ -44,6 +48,8 @@ function toSessionUser(user: AuthUser): SessionUser {
     displayName: user.displayName,
     email: user.email,
     character: user.character,
+    ownedCharacters: user.ownedCharacters,
+    coins: user.coins,
     isGuest: false,
   };
 }
@@ -68,7 +74,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const continueAsGuest = (displayName: string, character: string = DEFAULT_CHARACTER_ID) => {
     setState({
       token: null,
-      user: { id: `local-guest-${Date.now()}`, displayName, character, isGuest: true },
+      user: {
+        id: `local-guest-${Date.now()}`,
+        displayName,
+        character,
+        ownedCharacters: FREE_CHARACTER_IDS,
+        coins: 0,
+        isGuest: true,
+      },
     });
   };
 
@@ -82,9 +95,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState((prev) => (prev.user ? { ...prev, user: { ...prev.user, character } } : prev));
   };
 
+  const applyPurchase = (ownedCharacters: string[], coins: number) => {
+    setState((prev) => (prev.user ? { ...prev, user: { ...prev.user, ownedCharacters, coins } } : prev));
+  };
+
+  const setCoins = (coins: number) => {
+    setState((prev) => (prev.user ? { ...prev, user: { ...prev.user, coins } } : prev));
+  };
+
   return (
     <AuthContext.Provider
-      value={{ ...state, login, register, continueAsGuest, logout, updateDisplayName, updateCharacter }}
+      value={{
+        ...state,
+        login,
+        register,
+        continueAsGuest,
+        logout,
+        updateDisplayName,
+        updateCharacter,
+        applyPurchase,
+        setCoins,
+      }}
     >
       {children}
     </AuthContext.Provider>

@@ -28,8 +28,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     if (!user) return null;
     const auth = user.isGuest ? { guestName: user.displayName, character: user.character } : { token };
     return io(SERVER_URL, { auth, autoConnect: true });
+    // Deliberately excludes user.character: later character changes are pushed live over
+    // "character:change" instead of reconnecting, which would otherwise drop the player from their room.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, user?.character, token]);
+  }, [user?.id, token]);
 
   useEffect(() => {
     if (!socket) return;

@@ -9,6 +9,8 @@ export interface AuthUser {
   email: string;
   displayName: string;
   character: string;
+  ownedCharacters: string[];
+  coins: number;
 }
 
 export interface AuthResponse {
@@ -30,6 +32,8 @@ export interface UserProfile {
   bio: string;
   interests: string[];
   character: string;
+  ownedCharacters: string[];
+  coins: number;
   createdAt: string;
   stats: UserStats;
 }
@@ -101,7 +105,15 @@ export function postStudySession(
   token: string,
   session: { durationMs: number; mode: "pomodoro" | "stopwatch"; roomId: string },
 ) {
-  return postJson<void>("/stats/sessions", session, token);
+  return postJson<{ coins: number }>("/stats/sessions", session, token);
+}
+
+export function purchaseCharacter(token: string, characterId: string) {
+  return postJson<{ ownedCharacters: string[]; coins: number }>(
+    "/users/me/purchase-character",
+    { characterId },
+    token,
+  );
 }
 
 export function listRooms() {

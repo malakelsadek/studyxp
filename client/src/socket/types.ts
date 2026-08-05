@@ -42,6 +42,12 @@ export interface PersonalTodoItem extends TodoItem {
   private: boolean;
 }
 
+export interface LeaderboardEntry {
+  id: string;
+  displayName: string;
+  studyMs: number;
+}
+
 export interface RoomSnapshot {
   roomId: string;
   selfId: string;
@@ -50,6 +56,7 @@ export interface RoomSnapshot {
   messages: ChatMessage[];
   todos: TodoItem[];
   personalTodos: Record<string, PersonalTodoItem[]>;
+  leaderboard: LeaderboardEntry[];
   name: string;
   backgroundUrl: string | null;
   maxCapacity: number;
@@ -74,6 +81,8 @@ export interface ClientToServerEvents {
   "personal:reorder": (payload: { orderedIds: string[] }) => void;
   "room:background": (payload: { url: string | null }) => void;
   "room:name": (payload: { name: string }) => void;
+  "study:log": (payload: { durationMs: number }) => void;
+  "character:change": (payload: { character: string }) => void;
 }
 
 export interface ServerToClientEvents {
@@ -87,5 +96,7 @@ export interface ServerToClientEvents {
   "personal:update": (payload: { ownerId: string; todos: PersonalTodoItem[] }) => void;
   "room:background": (payload: { url: string | null }) => void;
   "room:name": (payload: { name: string }) => void;
+  "leaderboard:update": (payload: { leaderboard: LeaderboardEntry[] }) => void;
+  "player:character": (payload: { id: string; character: string }) => void;
   "room:error": (payload: { message: string }) => void;
 }

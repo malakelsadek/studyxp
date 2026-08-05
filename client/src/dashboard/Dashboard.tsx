@@ -1,9 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { listRooms, updateProfile, type RoomSummary } from "../lib/api";
-import { CHARACTER_PRESETS } from "../game/characterPresets";
-import { CharacterPreview } from "../game/CharacterPreview";
+import { listRooms, type RoomSummary } from "../lib/api";
+import { CharacterStore } from "./CharacterStore";
 import "./Dashboard.css";
 
 function roomPasswordKey(roomId: string) {
@@ -11,7 +10,7 @@ function roomPasswordKey(roomId: string) {
 }
 
 export function Dashboard() {
-  const { user, token, updateCharacter, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const routeError = (location.state as { error?: string } | null)?.error ?? null;
@@ -35,17 +34,6 @@ export function Dashboard() {
 
   if (!user) return null;
 
-  const handleSelectCharacter = async (characterId: string) => {
-    updateCharacter(characterId);
-    if (token) {
-      try {
-        await updateProfile(token, { character: characterId });
-      } catch {
-        // cosmetic preference; not worth blocking the UI over a failed save
-      }
-    }
-  };
-
   const handleJoinSubmit = (e: FormEvent, roomId: string) => {
     e.preventDefault();
     sessionStorage.setItem(roomPasswordKey(roomId), passwordDraft);
@@ -64,19 +52,8 @@ export function Dashboard() {
 
       <div className="dashboard-body">
         <section className="dashboard-section">
-          <h2>Pick your character</h2>
-          <div className="character-grid">
-            {CHARACTER_PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                className={`character-option ${user.character === preset.id ? "selected" : ""}`}
-                onClick={() => handleSelectCharacter(preset.id)}
-              >
-                <CharacterPreview characterId={preset.id} size={56} />
-                <span>{preset.name}</span>
-              </button>
-            ))}
-          </div>
+          <h2>Outfit store</h2>
+          <CharacterStore />
         </section>
 
         <section className="dashboard-section">
