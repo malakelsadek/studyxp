@@ -1,4 +1,4 @@
-export type PanelKey = "timer" | "todo" | "shortcuts" | "settings";
+export type PanelKey = "timer" | "todo" | "shortcuts" | "settings" | "outfit";
 
 interface SideNavProps {
   openPanels: Record<PanelKey, boolean>;
@@ -35,6 +35,13 @@ export function SideNav({ openPanels, onToggle }: SideNavProps) {
         onClick={() => onToggle("settings")}
       >
         ⚙️
+      </button>
+      <button
+        className={openPanels.outfit ? "active" : ""}
+        title="Change outfit"
+        onClick={() => onToggle("outfit")}
+      >
+        👕
       </button>
     </div>
   );

@@ -1,5 +1,6 @@
 import type {
   ChatMessage,
+  LeaderboardEntry,
   PersonalTodoItem,
   PlayerDTO,
   RoomSnapshot,
@@ -23,6 +24,7 @@ interface RoomState {
   messages: ChatMessage[];
   todos: TodoItem[];
   personalTodos: Map<string, PersonalTodoItem[]>;
+  studyTimes: Map<string, { displayName: string; studyMs: number }>;
 }
 
 const rooms = new Map<string, RoomState>();
@@ -46,10 +48,23 @@ function defaultTimer(
 function getOrCreateRoom(roomId: string): RoomState {
   let room = rooms.get(roomId);
   if (!room) {
-    room = { players: new Map(), timer: defaultTimer(), messages: [], todos: [], personalTodos: new Map() };
+    room = {
+      players: new Map(),
+      timer: defaultTimer(),
+      messages: [],
+      todos: [],
+      personalTodos: new Map(),
+      studyTimes: new Map(),
+    };
     rooms.set(roomId, room);
   }
   return room;
+}
+
+function toLeaderboard(room: RoomState): LeaderboardEntry[] {
+  return Array.from(room.studyTimes.entries())
+    .map(([id, entry]) => ({ id, displayName: entry.displayName, studyMs: entry.studyMs }))
+    .sort((a, b) => b.studyMs - a.studyMs);
 }
 
 export interface RoomDbMeta {
@@ -75,6 +90,7 @@ function toSnapshot(roomId: string, room: RoomState, selfId: string, dbMeta: Roo
     messages: room.messages,
     todos: room.todos,
     personalTodos: visiblePersonalTodos(room, selfId),
+    leaderboard: toLeaderboard(room),
     name: dbMeta.name,
     backgroundUrl: dbMeta.backgroundUrl,
     maxCapacity: dbMeta.maxCapacity,
@@ -110,6 +126,14 @@ export function movePlayer(roomId: string, socketId: string, x: number, y: numbe
   if (!room || !player) return null;
   player.x = x;
   player.y = y;
+  return player;
+}
+
+export function changeCharacter(roomId: string, socketId: string, character: string): PlayerDTO | null {
+  const room = rooms.get(roomId);
+  const player = room?.players.get(socketId);
+  if (!room || !player) return null;
+  player.character = character;
   return player;
 }
 
@@ -293,4 +317,17 @@ export function getVisiblePersonalTodos(roomId: string, ownerId: string, viewerI
   const items = room?.personalTodos.get(ownerId);
   if (!room || !items) return null;
   return ownerId === viewerId ? items : items.filter((t) => !t.private);
+}
+
+export function logStudyTime(
+  roomId: string,
+  playerId: string,
+  displayName: string,
+  durationMs: number,
+): LeaderboardEntry[] | null {
+  const room = rooms.get(roomId);
+  if (!room) return null;
+  const existing = room.studyTimes.get(playerId);
+  room.studyTimes.set(playerId, { displayName, studyMs: (existing?.studyMs ?? 0) + durationMs });
+  return toLeaderboard(room);
 }

@@ -7,10 +7,12 @@ import {
   addChatMessage,
   addPersonalTodo,
   addTodo,
+  changeCharacter,
   configureTimer,
   getPlayerCount,
   joinRoom,
   leaveRoom,
+  logStudyTime,
   movePlayer,
   pauseTimer,
   removePersonalTodo,
@@ -23,6 +25,7 @@ import {
   toggleTodo,
   togglePersonalTodo,
 } from "./rooms.js";
+import { FREE_CHARACTER_IDS } from "../users/characters.js";
 import type {
   ClientToServerEvents,
   InterServerEvents,
@@ -39,9 +42,15 @@ const CHARACTER_PATTERN = /^char-[a-z0-9-]+$/;
 const MIN_TIMER_MS = 60 * 1000;
 const MAX_TIMER_MS = 180 * 60 * 1000;
 const MAX_ESTIMATE_MINUTES = 24 * 60;
+const MAX_STUDY_LOG_MS = 6 * 60 * 60 * 1000;
 
 function sanitizeCharacter(character: unknown): string {
   return typeof character === "string" && CHARACTER_PATTERN.test(character) ? character : DEFAULT_CHARACTER;
+}
+
+function sanitizeOwnedCharacter(character: unknown, owned: string[]): string {
+  const sanitized = sanitizeCharacter(character);
+  return owned.includes(sanitized) ? sanitized : DEFAULT_CHARACTER;
 }
 
 function clampMs(value: unknown, fallback: number): number {
@@ -86,14 +95,16 @@ export function registerSocketHandlers(io: AppServer) {
           id: user.id,
           displayName: user.displayName,
           isGuest: false,
-          character: sanitizeCharacter(user.character),
+          character: sanitizeOwnedCharacter(user.character, user.ownedCharacters),
+          ownedCharacters: user.ownedCharacters,
         };
       } else if (guestName && guestName.trim().length > 0) {
         socket.data.user = {
           id: `guest-${randomUUID()}`,
           displayName: guestName.trim().slice(0, MAX_DISPLAY_NAME_LENGTH),
           isGuest: true,
-          character: sanitizeCharacter(character),
+          character: sanitizeOwnedCharacter(character, FREE_CHARACTER_IDS),
+          ownedCharacters: FREE_CHARACTER_IDS,
         };
       } else {
         return next(new Error("authentication required"));
@@ -159,6 +170,17 @@ export function registerSocketHandlers(io: AppServer) {
       const player = movePlayer(roomId, socket.id, x, y);
       if (!player) return;
       socket.to(roomId).emit("player:moved", { id: player.id, x, y });
+    });
+
+    socket.on("character:change", ({ character }) => {
+      const sanitized = sanitizeCharacter(character);
+      if (!socket.data.user.ownedCharacters.includes(sanitized)) return;
+      socket.data.user.character = sanitized;
+
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      const player = changeCharacter(roomId, socket.id, sanitized);
+      if (player) io.to(roomId).emit("player:character", { id: player.id, character: sanitized });
     });
 
     socket.on("chat:send", ({ text }) => {
@@ -273,6 +295,18 @@ export function registerSocketHandlers(io: AppServer) {
       if (!roomId || !Array.isArray(orderedIds)) return;
       const items = reorderPersonalTodos(roomId, socket.data.user.id, orderedIds);
       if (items) broadcastPersonalUpdate(roomId, socket.data.user.id, items);
+    });
+
+    socket.on("study:log", ({ durationMs }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId || typeof durationMs !== "number" || !Number.isFinite(durationMs) || durationMs <= 0) return;
+      const leaderboard = logStudyTime(
+        roomId,
+        socket.data.user.id,
+        socket.data.user.displayName,
+        Math.min(durationMs, MAX_STUDY_LOG_MS),
+      );
+      if (leaderboard) io.to(roomId).emit("leaderboard:update", { leaderboard });
     });
 
     socket.on("disconnect", () => {

@@ -32,7 +32,14 @@ authRouter.post("/register", async (req, res) => {
   const token = signToken({ userId: user.id });
   res.status(201).json({
     token,
-    user: { id: user.id, email: user.email, displayName: user.displayName, character: user.character },
+    user: {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      character: user.character,
+      ownedCharacters: user.ownedCharacters,
+      coins: user.coins,
+    },
   });
 });
 
@@ -61,6 +68,13 @@ authRouter.post("/login", async (req, res) => {
   const token = signToken({ userId: user.id });
   res.json({
     token,
-    user: { id: user.id, email: user.email, displayName: user.displayName, character: user.character },
+    user: {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      character: user.character,
+      ownedCharacters: user.ownedCharacters,
+      coins: user.coins,
+    },
   });
 });

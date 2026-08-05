@@ -86,9 +86,7 @@ export function ProfileModal({
         {isGuest ? (
           <>
             <h2>{fallbackDisplayName} (guest)</h2>
-            <p className="profile-muted">
-              Guests don't have profiles yet — sign up to track your bio, interests, and study stats.
-            </p>
+            <p className="profile-muted">Guests don't have profiles.</p>
           </>
         ) : loading ? (
           <p className="profile-muted">Loading profile...</p>

@@ -10,6 +10,8 @@ import { TimerTile } from "./TimerTile";
 import { TodoTile } from "./TodoTile";
 import { ShortcutsPanel } from "./ShortcutsPanel";
 import { RoomSettings } from "./RoomSettings";
+import { LeaderboardPanel } from "./LeaderboardPanel";
+import { OutfitPanel } from "./OutfitPanel";
 import { SideNav, type PanelKey } from "./SideNav";
 import { Tile } from "./Tile";
 import { ProfileModal } from "../profile/ProfileModal";
@@ -17,16 +19,18 @@ import "./RoomPage.css";
 
 export function RoomPage() {
   const { roomId = "lobby" } = useParams();
-  const { user, token, logout } = useAuth();
+  const { user, token, logout, setCoins } = useAuth();
   const navigate = useNavigate();
   const [openPanels, setOpenPanels] = useState<Record<PanelKey, boolean>>({
     timer: false,
     todo: false,
     shortcuts: false,
     settings: false,
+    outfit: false,
   });
   const [chatActive, setChatActive] = useState(false);
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   useEffect(() => {
     if (!user) navigate("/");
@@ -67,6 +71,7 @@ export function RoomPage() {
     timer,
     todos,
     personalTodos,
+    leaderboard,
     name,
     backgroundUrl,
     maxCapacity,
@@ -89,12 +94,13 @@ export function RoomPage() {
     broadcastBackground,
     broadcastName,
     setMaxCapacity,
+    logStudyTime,
   } = useRoomState(roomId);
 
   const personalTimer = usePersonalTimer();
 
-  useStudySessionLogger(timer, roomId, token);
-  useStudySessionLogger(personalTimer.timer, roomId, token);
+  useStudySessionLogger(timer, roomId, token, logStudyTime, setCoins);
+  useStudySessionLogger(personalTimer.timer, roomId, token, logStudyTime, setCoins);
 
   useEffect(() => {
     if (joinError) {
@@ -121,6 +127,7 @@ export function RoomPage() {
         </span>
         <div className="room-topbar-actions">
           <button onClick={() => navigate("/dashboard")}>Dashboard</button>
+          <button onClick={() => setShowLeaderboard((prev) => !prev)}>Leaderboard</button>
           <button onClick={() => { logout(); navigate("/"); }}>Leave</button>
         </div>
       </div>
@@ -198,6 +205,22 @@ export function RoomPage() {
               currentCapacity={maxCapacity}
               onCapacityChange={setMaxCapacity}
             />
+          </Tile>
+        )}
+
+        {openPanels.outfit && (
+          <Tile title="Outfit" initialPosition={{ x: 480, y: 448 }} onClose={() => togglePanel("outfit")}>
+            <OutfitPanel currentCharacter={user.character} ownedCharacters={user.ownedCharacters} />
+          </Tile>
+        )}
+
+        {showLeaderboard && (
+          <Tile
+            title="Leaderboard"
+            initialPosition={{ x: 480, y: 72 }}
+            onClose={() => setShowLeaderboard(false)}
+          >
+            <LeaderboardPanel leaderboard={leaderboard} selfId={selfId} />
           </Tile>
         )}
 
