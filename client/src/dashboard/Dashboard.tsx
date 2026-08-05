@@ -52,11 +52,6 @@ export function Dashboard() {
 
       <div className="dashboard-body">
         <section className="dashboard-section">
-          <h2>Outfit store</h2>
-          <CharacterStore />
-        </section>
-
-        <section className="dashboard-section">
           <h2>Rooms</h2>
           {error && <p className="dashboard-error">{error}</p>}
           {loadingRooms ? (
@@ -110,6 +105,11 @@ export function Dashboard() {
               })}
             </ul>
           )}
+        </section>
+
+        <section className="dashboard-section">
+          <h2>Outfit store</h2>
+          <CharacterStore />
         </section>
       </div>
     </div>
