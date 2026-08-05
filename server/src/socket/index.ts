@@ -6,6 +6,7 @@ import { verifyToken } from "../auth/jwt.js";
 import {
   addChatMessage,
   addPersonalTodo,
+  addTimeBlock,
   addTodo,
   changeCharacter,
   configureTimer,
@@ -15,11 +16,14 @@ import {
   logStudyTime,
   movePlayer,
   pauseTimer,
+  recordTaskCompletion,
   removePersonalTodo,
+  removeTimeBlock,
   removeTodo,
   reorderPersonalTodos,
   reorderTodos,
   resetTimer,
+  setMusicUrl,
   startTimer,
   switchTimerPhase,
   toggleTodo,
@@ -43,6 +47,31 @@ const MIN_TIMER_MS = 60 * 1000;
 const MAX_TIMER_MS = 180 * 60 * 1000;
 const MAX_ESTIMATE_MINUTES = 24 * 60;
 const MAX_STUDY_LOG_MS = 6 * 60 * 60 * 1000;
+const MAX_TIMEBLOCK_LABEL_LENGTH = 100;
+const MAX_TIMEBLOCK_TASKS = 10;
+const MAX_TIMEBLOCK_TASK_LENGTH = 200;
+const MINUTES_PER_DAY = 24 * 60;
+const MAX_MUSIC_URL_LENGTH = 500;
+
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function sanitizeMinute(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  const n = Math.round(value);
+  return n >= 0 && n < MINUTES_PER_DAY ? n : null;
+}
+
+function sanitizeDate(value: unknown): string | null {
+  return typeof value === "string" && ISO_DATE_PATTERN.test(value) ? value : null;
+}
+
+function sanitizeTasks(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((t): t is string => typeof t === "string" && t.trim().length > 0)
+    .slice(0, MAX_TIMEBLOCK_TASKS)
+    .map((t) => t.trim().slice(0, MAX_TIMEBLOCK_TASK_LENGTH));
+}
 
 function sanitizeCharacter(character: unknown): string {
   return typeof character === "string" && CHARACTER_PATTERN.test(character) ? character : DEFAULT_CHARACTER;
@@ -76,6 +105,19 @@ export function registerSocketHandlers(io: AppServer) {
       if (!target) continue;
       const isOwner = target.data.user.id === ownerId;
       target.emit("personal:update", { ownerId, todos: isOwner ? fullItems : filtered });
+    }
+  }
+
+  function recordCompletionIfNeeded(socket: AppSocket, roomId: string, becameDone: boolean) {
+    if (!becameDone) return;
+    const leaderboard = recordTaskCompletion(roomId, socket.data.user.id, socket.data.user.displayName);
+    if (leaderboard) io.to(roomId).emit("leaderboard:update", { leaderboard });
+    if (!socket.data.user.isGuest) {
+      prisma.user
+        .update({ where: { id: socket.data.user.id }, data: { tasksCompleted: { increment: 1 } } })
+        .catch(() => {
+          // best-effort; a dropped stat update shouldn't disrupt the todo UI
+        });
     }
   }
 
@@ -164,6 +206,14 @@ export function registerSocketHandlers(io: AppServer) {
       io.to(roomId).emit("room:name", { name: trimmed });
     });
 
+    socket.on("room:music", ({ url }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId || socket.data.user.isGuest) return;
+      const sanitizedUrl = typeof url === "string" && url.trim() ? url.trim().slice(0, MAX_MUSIC_URL_LENGTH) : null;
+      if (!setMusicUrl(roomId, sanitizedUrl)) return;
+      io.to(roomId).emit("room:music", { url: sanitizedUrl });
+    });
+
     socket.on("player:move", ({ x, y }) => {
       const roomId = socket.data.roomId;
       if (!roomId) return;
@@ -245,8 +295,10 @@ export function registerSocketHandlers(io: AppServer) {
     socket.on("todo:toggle", ({ id }) => {
       const roomId = socket.data.roomId;
       if (!roomId) return;
-      const todos = toggleTodo(roomId, id);
-      if (todos) io.to(roomId).emit("todo:update", { todos });
+      const result = toggleTodo(roomId, id);
+      if (!result) return;
+      io.to(roomId).emit("todo:update", { todos: result.todos });
+      recordCompletionIfNeeded(socket, roomId, result.becameDone);
     });
 
     socket.on("todo:remove", ({ id }) => {
@@ -279,8 +331,10 @@ export function registerSocketHandlers(io: AppServer) {
     socket.on("personal:toggle", ({ id }) => {
       const roomId = socket.data.roomId;
       if (!roomId) return;
-      const items = togglePersonalTodo(roomId, socket.data.user.id, id);
-      if (items) broadcastPersonalUpdate(roomId, socket.data.user.id, items);
+      const result = togglePersonalTodo(roomId, socket.data.user.id, id);
+      if (!result) return;
+      broadcastPersonalUpdate(roomId, socket.data.user.id, result.items);
+      recordCompletionIfNeeded(socket, roomId, result.becameDone);
     });
 
     socket.on("personal:remove", ({ id }) => {
@@ -307,6 +361,29 @@ export function registerSocketHandlers(io: AppServer) {
         Math.min(durationMs, MAX_STUDY_LOG_MS),
       );
       if (leaderboard) io.to(roomId).emit("leaderboard:update", { leaderboard });
+    });
+
+    socket.on("timeblock:add", ({ date, startMinute, endMinute, label, tasks }) => {
+      const roomId = socket.data.roomId;
+      const start = sanitizeMinute(startMinute);
+      const end = sanitizeMinute(endMinute);
+      const sanitizedDate = sanitizeDate(date);
+      if (!roomId || !sanitizedDate || start === null || end === null || end <= start) return;
+      const items = addTimeBlock(roomId, socket.data.user.id, {
+        date: sanitizedDate,
+        startMinute: start,
+        endMinute: end,
+        label: typeof label === "string" ? label.trim().slice(0, MAX_TIMEBLOCK_LABEL_LENGTH) : "",
+        tasks: sanitizeTasks(tasks),
+      });
+      if (items) socket.emit("timeblock:update", { timeBlocks: items });
+    });
+
+    socket.on("timeblock:remove", ({ id }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId || !id) return;
+      const items = removeTimeBlock(roomId, socket.data.user.id, id);
+      if (items) socket.emit("timeblock:update", { timeBlocks: items });
     });
 
     socket.on("disconnect", () => {

@@ -18,6 +18,7 @@ model User {
   ownedCharacters String[]       @default(["char-1", "char-2"])
   coins           Int            @default(0)
   studyMsBanked   Int            @default(0)
+  tasksCompleted  Int            @default(0)
   createdAt       DateTime       @default(now())
   studySessions   StudySession[]
 }

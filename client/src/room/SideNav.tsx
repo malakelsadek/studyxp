@@ -1,4 +1,4 @@
-export type PanelKey = "timer" | "todo" | "shortcuts" | "settings" | "outfit";
+export type PanelKey = "settings" | "shortcuts" | "timer" | "todo" | "calendar" | "music" | "outfit";
 
 interface SideNavProps {
   openPanels: Record<PanelKey, boolean>;
@@ -8,6 +8,20 @@ interface SideNavProps {
 export function SideNav({ openPanels, onToggle }: SideNavProps) {
   return (
     <div className="side-nav">
+      <button
+        className={openPanels.settings ? "active" : ""}
+        title="Room settings"
+        onClick={() => onToggle("settings")}
+      >
+        ⚙️
+      </button>
+      <button
+        className={openPanels.shortcuts ? "active" : ""}
+        title="Keyboard shortcuts"
+        onClick={() => onToggle("shortcuts")}
+      >
+        ⌨️
+      </button>
       <button
         className={openPanels.timer ? "active" : ""}
         title="Timer (Alt+T)"
@@ -23,18 +37,18 @@ export function SideNav({ openPanels, onToggle }: SideNavProps) {
         📝
       </button>
       <button
-        className={openPanels.shortcuts ? "active" : ""}
-        title="Keyboard shortcuts"
-        onClick={() => onToggle("shortcuts")}
+        className={openPanels.calendar ? "active" : ""}
+        title="Calendar (Alt+B)"
+        onClick={() => onToggle("calendar")}
       >
-        ⌨️
+        🗓️
       </button>
       <button
-        className={openPanels.settings ? "active" : ""}
-        title="Room settings"
-        onClick={() => onToggle("settings")}
+        className={openPanels.music ? "active" : ""}
+        title="Music"
+        onClick={() => onToggle("music")}
       >
-        ⚙️
+        🎵
       </button>
       <button
         className={openPanels.outfit ? "active" : ""}

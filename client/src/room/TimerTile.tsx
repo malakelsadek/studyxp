@@ -15,9 +15,11 @@ interface TimerControls {
 interface TimerTileProps {
   shared: TimerControls;
   personal: TimerControls;
+  soundId: string;
+  onSoundChange: (id: string) => void;
 }
 
-export function TimerTile({ shared, personal }: TimerTileProps) {
+export function TimerTile({ shared, personal, soundId, onSoundChange }: TimerTileProps) {
   const [mode, setMode] = useState<ViewMode>("shared");
   const active = mode === "shared" ? shared : personal;
 
@@ -31,6 +33,8 @@ export function TimerTile({ shared, personal }: TimerTileProps) {
         onReset={active.resetTimer}
         onSwitchPhase={active.switchPhase}
         onConfigureDurations={active.configureDurations}
+        soundId={soundId}
+        onSoundChange={onSoundChange}
       />
     </div>
   );

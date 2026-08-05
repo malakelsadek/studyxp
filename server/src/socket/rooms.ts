@@ -4,6 +4,7 @@ import type {
   PersonalTodoItem,
   PlayerDTO,
   RoomSnapshot,
+  TimeBlock,
   TimerMode,
   TimerState,
   TodoItem,
@@ -25,6 +26,9 @@ interface RoomState {
   todos: TodoItem[];
   personalTodos: Map<string, PersonalTodoItem[]>;
   studyTimes: Map<string, { displayName: string; studyMs: number }>;
+  taskCompletions: Map<string, { displayName: string; count: number }>;
+  timeBlocks: Map<string, TimeBlock[]>;
+  musicUrl: string | null;
 }
 
 const rooms = new Map<string, RoomState>();
@@ -55,6 +59,9 @@ function getOrCreateRoom(roomId: string): RoomState {
       todos: [],
       personalTodos: new Map(),
       studyTimes: new Map(),
+      taskCompletions: new Map(),
+      timeBlocks: new Map(),
+      musicUrl: null,
     };
     rooms.set(roomId, room);
   }
@@ -62,8 +69,18 @@ function getOrCreateRoom(roomId: string): RoomState {
 }
 
 function toLeaderboard(room: RoomState): LeaderboardEntry[] {
-  return Array.from(room.studyTimes.entries())
-    .map(([id, entry]) => ({ id, displayName: entry.displayName, studyMs: entry.studyMs }))
+  const ids = new Set([...room.studyTimes.keys(), ...room.taskCompletions.keys()]);
+  return Array.from(ids)
+    .map((id) => {
+      const study = room.studyTimes.get(id);
+      const tasks = room.taskCompletions.get(id);
+      return {
+        id,
+        displayName: study?.displayName ?? tasks?.displayName ?? "",
+        studyMs: study?.studyMs ?? 0,
+        tasksCompleted: tasks?.count ?? 0,
+      };
+    })
     .sort((a, b) => b.studyMs - a.studyMs);
 }
 
@@ -91,6 +108,8 @@ function toSnapshot(roomId: string, room: RoomState, selfId: string, dbMeta: Roo
     todos: room.todos,
     personalTodos: visiblePersonalTodos(room, selfId),
     leaderboard: toLeaderboard(room),
+    timeBlocks: room.timeBlocks.get(selfId) ?? [],
+    musicUrl: room.musicUrl,
     name: dbMeta.name,
     backgroundUrl: dbMeta.backgroundUrl,
     maxCapacity: dbMeta.maxCapacity,
@@ -229,13 +248,13 @@ export function addTodo(
   return room.todos;
 }
 
-export function toggleTodo(roomId: string, todoId: string): TodoItem[] | null {
+export function toggleTodo(roomId: string, todoId: string): { todos: TodoItem[]; becameDone: boolean } | null {
   const room = rooms.get(roomId);
   if (!room) return null;
   const todo = room.todos.find((t) => t.id === todoId);
   if (!todo) return null;
   todo.done = !todo.done;
-  return room.todos;
+  return { todos: room.todos, becameDone: todo.done };
 }
 
 export function removeTodo(roomId: string, todoId: string): TodoItem[] | null {
@@ -280,14 +299,18 @@ export function addPersonalTodo(
   return items;
 }
 
-export function togglePersonalTodo(roomId: string, ownerId: string, todoId: string): PersonalTodoItem[] | null {
+export function togglePersonalTodo(
+  roomId: string,
+  ownerId: string,
+  todoId: string,
+): { items: PersonalTodoItem[]; becameDone: boolean } | null {
   const room = rooms.get(roomId);
   const items = room?.personalTodos.get(ownerId);
   if (!room || !items) return null;
   const todo = items.find((t) => t.id === todoId);
   if (!todo) return null;
   todo.done = !todo.done;
-  return items;
+  return { items, becameDone: todo.done };
 }
 
 export function removePersonalTodo(roomId: string, ownerId: string, todoId: string): PersonalTodoItem[] | null {
@@ -330,4 +353,42 @@ export function logStudyTime(
   const existing = room.studyTimes.get(playerId);
   room.studyTimes.set(playerId, { displayName, studyMs: (existing?.studyMs ?? 0) + durationMs });
   return toLeaderboard(room);
+}
+
+export function recordTaskCompletion(roomId: string, playerId: string, displayName: string): LeaderboardEntry[] | null {
+  const room = rooms.get(roomId);
+  if (!room) return null;
+  const existing = room.taskCompletions.get(playerId);
+  room.taskCompletions.set(playerId, { displayName, count: (existing?.count ?? 0) + 1 });
+  return toLeaderboard(room);
+}
+
+export function setMusicUrl(roomId: string, url: string | null): boolean {
+  const room = rooms.get(roomId);
+  if (!room) return false;
+  room.musicUrl = url;
+  return true;
+}
+
+export function addTimeBlock(
+  roomId: string,
+  ownerId: string,
+  block: { date: string; startMinute: number; endMinute: number; label: string; tasks: string[] },
+): TimeBlock[] | null {
+  const room = rooms.get(roomId);
+  if (!room) return null;
+  const items = room.timeBlocks.get(ownerId) ?? [];
+  items.push({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, ...block });
+  items.sort((a, b) => (a.date === b.date ? a.startMinute - b.startMinute : a.date.localeCompare(b.date)));
+  room.timeBlocks.set(ownerId, items);
+  return items;
+}
+
+export function removeTimeBlock(roomId: string, ownerId: string, blockId: string): TimeBlock[] | null {
+  const room = rooms.get(roomId);
+  const items = room?.timeBlocks.get(ownerId);
+  if (!room || !items) return null;
+  const next = items.filter((b) => b.id !== blockId);
+  room.timeBlocks.set(ownerId, next);
+  return next;
 }

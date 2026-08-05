@@ -15,6 +15,7 @@ const PROFILE_SELECT = {
   character: true,
   ownedCharacters: true,
   coins: true,
+  tasksCompleted: true,
   createdAt: true,
 } as const;
 
