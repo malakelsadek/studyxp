@@ -42,6 +42,17 @@ export function Dashboard() {
     navigate(`/room/${roomId}`);
   };
 
+  const handleJoinClick = (room: RoomSummary) => {
+    if (!room.hasPassword) {
+      sessionStorage.removeItem(roomPasswordKey(room.id));
+      navigate(`/room/${room.id}`);
+      return;
+    }
+    setJoiningRoomId(room.id);
+    setPasswordDraft("");
+    setError(null);
+  };
+
   return (
     <div className="dashboard-page">
       <div className="dashboard-topbar">
@@ -50,6 +61,7 @@ export function Dashboard() {
           {user.displayName} {user.isGuest && "(guest)"}
         </span>
         <div className="dashboard-topbar-actions">
+          <span className="dashboard-topbar-coins">🪙 {user.coins}</span>
           <button className="dashboard-profile-btn" onClick={() => setShowProfile(true)}>
             Profile
           </button>
@@ -70,6 +82,7 @@ export function Dashboard() {
                 return (
                 <li key={room.id} className="room-list-item">
                   <span>
+                    {room.hasPassword && <span title="Password protected">🔒 </span>}
                     {room.name}{" "}
                     <span className="room-occupancy">
                       ({room.currentCount}/{room.maxCapacity})
@@ -96,14 +109,7 @@ export function Dashboard() {
                       </button>
                     </form>
                   ) : (
-                    <button
-                      disabled={isFull}
-                      onClick={() => {
-                        setJoiningRoomId(room.id);
-                        setPasswordDraft("");
-                        setError(null);
-                      }}
-                    >
+                    <button disabled={isFull} onClick={() => handleJoinClick(room)}>
                       {isFull ? "Full" : "Join"}
                     </button>
                   )}

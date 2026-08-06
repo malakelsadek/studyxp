@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { loginRequest, registerRequest, type AuthUser } from "../lib/api";
-import { DEFAULT_CHARACTER_ID, FREE_CHARACTER_IDS } from "../game/characterPresets";
+import { ALL_CHARACTER_IDS, DEFAULT_CHARACTER_ID } from "../game/characterPresets";
 
 export interface SessionUser {
   id: string;
@@ -24,7 +24,6 @@ interface AuthContextValue extends AuthState {
   logout: () => void;
   updateDisplayName: (displayName: string) => void;
   updateCharacter: (character: string) => void;
-  applyPurchase: (ownedCharacters: string[], coins: number) => void;
   setCoins: (coins: number) => void;
   syncProfile: (profile: { displayName: string; character: string; ownedCharacters: string[]; coins: number }) => void;
 }
@@ -79,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: `local-guest-${Date.now()}`,
         displayName,
         character,
-        ownedCharacters: FREE_CHARACTER_IDS,
+        ownedCharacters: ALL_CHARACTER_IDS,
         coins: 0,
         isGuest: true,
       },
@@ -94,10 +93,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const updateCharacter = useCallback((character: string) => {
     setState((prev) => (prev.user ? { ...prev, user: { ...prev.user, character } } : prev));
-  }, []);
-
-  const applyPurchase = useCallback((ownedCharacters: string[], coins: number) => {
-    setState((prev) => (prev.user ? { ...prev, user: { ...prev.user, ownedCharacters, coins } } : prev));
   }, []);
 
   const setCoins = useCallback((coins: number) => {
@@ -121,7 +116,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         updateDisplayName,
         updateCharacter,
-        applyPurchase,
         setCoins,
         syncProfile,
       }}

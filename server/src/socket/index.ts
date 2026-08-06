@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import type { Server, Socket } from "socket.io";
 import { prisma } from "../prisma.js";
 import { verifyToken } from "../auth/jwt.js";
+import { ROOM_SETTINGS_ADMIN_EMAIL } from "../auth/requireRoomAdmin.js";
 import {
   addChatMessage,
   addPersonalTodo,
@@ -38,7 +39,7 @@ import {
   toggleTodo,
   togglePersonalTodo,
 } from "./rooms.js";
-import { FREE_CHARACTER_IDS } from "../users/characters.js";
+import { ALL_CHARACTER_IDS, isKnownCharacter } from "../users/characters.js";
 import type {
   ClientToServerEvents,
   InterServerEvents,
@@ -51,7 +52,6 @@ const MAX_DISPLAY_NAME_LENGTH = 24;
 const MAX_CHAT_LENGTH = 500;
 const MAX_TODO_LENGTH = 200;
 const DEFAULT_CHARACTER = "char-1";
-const CHARACTER_PATTERN = /^char-[a-z0-9-]+$/;
 const MIN_TIMER_MS = 60 * 1000;
 const MAX_TIMER_MS = 180 * 60 * 1000;
 const MAX_ESTIMATE_MINUTES = 24 * 60;
@@ -83,12 +83,7 @@ function sanitizeTasks(value: unknown): string[] {
 }
 
 function sanitizeCharacter(character: unknown): string {
-  return typeof character === "string" && CHARACTER_PATTERN.test(character) ? character : DEFAULT_CHARACTER;
-}
-
-function sanitizeOwnedCharacter(character: unknown, owned: string[]): string {
-  const sanitized = sanitizeCharacter(character);
-  return owned.includes(sanitized) ? sanitized : DEFAULT_CHARACTER;
+  return typeof character === "string" && isKnownCharacter(character) ? character : DEFAULT_CHARACTER;
 }
 
 function clampMs(value: unknown, fallback: number): number {
@@ -144,19 +139,21 @@ export function registerSocketHandlers(io: AppServer) {
         if (!user) return next(new Error("invalid token"));
         socket.data.user = {
           id: user.id,
+          email: user.email,
           displayName: user.displayName,
           isGuest: false,
-          character: sanitizeOwnedCharacter(user.character, user.ownedCharacters),
+          character: sanitizeCharacter(user.character),
           ownedCharacters: user.ownedCharacters,
           coins: user.coins,
         };
       } else if (guestName && guestName.trim().length > 0) {
         socket.data.user = {
           id: `guest-${randomUUID()}`,
+          email: null,
           displayName: guestName.trim().slice(0, MAX_DISPLAY_NAME_LENGTH),
           isGuest: true,
-          character: sanitizeOwnedCharacter(character, FREE_CHARACTER_IDS),
-          ownedCharacters: FREE_CHARACTER_IDS,
+          character: sanitizeCharacter(character),
+          ownedCharacters: ALL_CHARACTER_IDS,
           coins: 0,
         };
       } else {
@@ -178,9 +175,11 @@ export function registerSocketHandlers(io: AppServer) {
         return socket.emit("room:error", { message: "Room not found" });
       }
 
-      const validPassword = typeof password === "string" && (await bcrypt.compare(password, room.passwordHash));
-      if (!validPassword) {
-        return socket.emit("room:error", { message: "Incorrect room password" });
+      if (room.passwordHash) {
+        const validPassword = typeof password === "string" && (await bcrypt.compare(password, room.passwordHash));
+        if (!validPassword) {
+          return socket.emit("room:error", { message: "Incorrect room password" });
+        }
       }
 
       const alreadyJoined = socket.data.roomId === roomId;
@@ -191,7 +190,7 @@ export function registerSocketHandlers(io: AppServer) {
       socket.data.roomId = roomId;
       socket.join(roomId);
 
-      const { coins: _coins, ...playerFields } = socket.data.user;
+      const { coins: _coins, email: _email, ...playerFields } = socket.data.user;
       const player = { ...playerFields, x: 768, y: 512 };
       const selfProfile = socket.data.user.isGuest
         ? null
@@ -209,6 +208,7 @@ export function registerSocketHandlers(io: AppServer) {
           name: room.name,
           backgroundUrl: room.backgroundUrl,
           maxCapacity: room.maxCapacity,
+          hasPassword: room.passwordHash !== null,
         },
         selfProfile,
       );
@@ -219,14 +219,14 @@ export function registerSocketHandlers(io: AppServer) {
 
     socket.on("room:background", ({ url }) => {
       const roomId = socket.data.roomId;
-      if (!roomId || socket.data.user.isGuest) return;
+      if (!roomId || socket.data.user.email !== ROOM_SETTINGS_ADMIN_EMAIL) return;
       if (url !== null && !url.startsWith("/uploads/rooms/")) return;
       io.to(roomId).emit("room:background", { url });
     });
 
     socket.on("room:name", ({ name }) => {
       const roomId = socket.data.roomId;
-      if (!roomId || socket.data.user.isGuest) return;
+      if (!roomId || socket.data.user.email !== ROOM_SETTINGS_ADMIN_EMAIL) return;
       const trimmed = name?.trim().slice(0, 50);
       if (!trimmed) return;
       io.to(roomId).emit("room:name", { name: trimmed });
@@ -249,8 +249,8 @@ export function registerSocketHandlers(io: AppServer) {
     });
 
     socket.on("character:change", ({ character }) => {
-      const sanitized = sanitizeCharacter(character);
-      if (!socket.data.user.ownedCharacters.includes(sanitized)) return;
+      if (typeof character !== "string" || !isKnownCharacter(character)) return;
+      const sanitized = character;
       socket.data.user.character = sanitized;
 
       const roomId = socket.data.roomId;

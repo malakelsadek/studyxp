@@ -1,5 +1,6 @@
 export interface SessionUser {
   id: string;
+  email: string | null;
   displayName: string;
   isGuest: boolean;
   character: string;
@@ -91,6 +92,7 @@ export interface RoomSnapshot {
   name: string;
   backgroundUrl: string | null;
   maxCapacity: number;
+  hasPassword: boolean;
   selfProfile: SelfProfile | null;
 }
 

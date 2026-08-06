@@ -93,6 +93,7 @@ export interface RoomDbMeta {
   name: string;
   backgroundUrl: string | null;
   maxCapacity: number;
+  hasPassword: boolean;
 }
 
 function visiblePersonalTodos(room: RoomState, viewerId: string): Record<string, PersonalTodoItem[]> {
@@ -126,6 +127,7 @@ function toSnapshot(
     name: dbMeta.name,
     backgroundUrl: dbMeta.backgroundUrl,
     maxCapacity: dbMeta.maxCapacity,
+    hasPassword: dbMeta.hasPassword,
     selfProfile,
   };
 }

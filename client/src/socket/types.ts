@@ -82,6 +82,7 @@ export interface RoomSnapshot {
   name: string;
   backgroundUrl: string | null;
   maxCapacity: number;
+  hasPassword: boolean;
   selfProfile: SelfProfile | null;
 }
 
