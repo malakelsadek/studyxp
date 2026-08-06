@@ -17,9 +17,18 @@ interface TimerTileProps {
   personal: TimerControls;
   soundId: string;
   onSoundChange: (id: string) => void;
+  autoBreak: boolean;
+  onAutoBreakChange: (value: boolean) => void;
 }
 
-export function TimerTile({ shared, personal, soundId, onSoundChange }: TimerTileProps) {
+export function TimerTile({
+  shared,
+  personal,
+  soundId,
+  onSoundChange,
+  autoBreak,
+  onAutoBreakChange,
+}: TimerTileProps) {
   const [mode, setMode] = useState<ViewMode>("shared");
   const active = mode === "shared" ? shared : personal;
 
@@ -35,6 +44,8 @@ export function TimerTile({ shared, personal, soundId, onSoundChange }: TimerTil
         onConfigureDurations={active.configureDurations}
         soundId={soundId}
         onSoundChange={onSoundChange}
+        autoBreak={autoBreak}
+        onAutoBreakChange={onAutoBreakChange}
       />
     </div>
   );

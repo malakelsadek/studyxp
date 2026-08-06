@@ -9,6 +9,8 @@ import {
   addSharedTimeBlock,
   addTimeBlock,
   addTodo,
+  advancePersonalTimerPhase,
+  advanceTimerPhase,
   changeCharacter,
   configurePersonalTimer,
   configureTimer,
@@ -297,6 +299,13 @@ export function registerSocketHandlers(io: AppServer) {
       if (timer) io.to(roomId).emit("timer:update", timer);
     });
 
+    socket.on("timer:advancePhase", () => {
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      const timer = advanceTimerPhase(roomId);
+      if (timer) io.to(roomId).emit("timer:update", timer);
+    });
+
     socket.on("timer:configure", ({ workDurationMs, breakDurationMs }) => {
       const roomId = socket.data.roomId;
       if (!roomId) return;
@@ -329,6 +338,13 @@ export function registerSocketHandlers(io: AppServer) {
       const roomId = socket.data.roomId;
       if (!roomId) return;
       const timer = switchPersonalTimerPhase(roomId, socket.data.user.id);
+      if (timer) socket.emit("personalTimer:update", timer);
+    });
+
+    socket.on("personalTimer:advancePhase", () => {
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      const timer = advancePersonalTimerPhase(roomId, socket.data.user.id);
       if (timer) socket.emit("personalTimer:update", timer);
     });
 

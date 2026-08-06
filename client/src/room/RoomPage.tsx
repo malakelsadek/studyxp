@@ -16,6 +16,7 @@ import { CalendarPanel } from "./CalendarPanel";
 import { MusicPanel } from "./MusicPanel";
 import { CelebrationPopup } from "./CelebrationPopup";
 import { useTimerSoundPreference } from "./useTimerSoundPreference";
+import { useTimerAutoBreakPreference } from "./useTimerAutoBreakPreference";
 import { useTimerCompletionSound } from "./useTimerCompletionSound";
 import { useAllTasksCelebration } from "./useAllTasksCelebration";
 import { playPartySound } from "./timerSounds";
@@ -108,11 +109,13 @@ export function RoomPage() {
     pauseTimer,
     resetTimer,
     switchTimerPhase,
+    advanceTimerPhase,
     configureTimer,
     startPersonalTimer,
     pausePersonalTimer,
     resetPersonalTimer,
     switchPersonalTimerPhase,
+    advancePersonalTimerPhase,
     configurePersonalTimer,
     addTodo,
     toggleTodo,
@@ -142,11 +145,12 @@ export function RoomPage() {
     configureDurations: configurePersonalTimer,
   };
   const { soundId, setSoundId, play: playTimerDoneSound } = useTimerSoundPreference();
+  const { autoBreak, setAutoBreak } = useTimerAutoBreakPreference();
 
   useStudySessionLogger(timer, roomId, token, logStudyTime, setCoins);
   useStudySessionLogger(personalTimer.timer, roomId, token, logStudyTime, setCoins);
-  useTimerCompletionSound(timer, playTimerDoneSound);
-  useTimerCompletionSound(personalTimer.timer, playTimerDoneSound);
+  useTimerCompletionSound(timer, playTimerDoneSound, autoBreak, advanceTimerPhase);
+  useTimerCompletionSound(personalTimer.timer, playTimerDoneSound, autoBreak, advancePersonalTimerPhase);
 
   useEffect(() => {
     if (selfProfile) syncProfile(selfProfile);
@@ -224,6 +228,8 @@ export function RoomPage() {
               personal={personalTimer}
               soundId={soundId}
               onSoundChange={setSoundId}
+              autoBreak={autoBreak}
+              onAutoBreakChange={setAutoBreak}
             />
           </Tile>
         )}

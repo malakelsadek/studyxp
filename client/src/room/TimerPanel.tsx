@@ -12,6 +12,8 @@ interface TimerPanelProps {
   onConfigureDurations: (workDurationMs: number, breakDurationMs: number) => void;
   soundId: string;
   onSoundChange: (id: string) => void;
+  autoBreak: boolean;
+  onAutoBreakChange: (value: boolean) => void;
 }
 
 export function TimerPanel({
@@ -23,6 +25,8 @@ export function TimerPanel({
   onConfigureDurations,
   soundId,
   onSoundChange,
+  autoBreak,
+  onAutoBreakChange,
 }: TimerPanelProps) {
   const [, forceTick] = useState(0);
   const [showMore, setShowMore] = useState(false);
@@ -67,57 +71,73 @@ export function TimerPanel({
 
       {showMore && (
         <div className="timer-more">
-          <div className="timer-controls">
+          <div className="timer-controls timer-controls-secondary">
             <button
+              className={timer.mode === "pomodoro" ? "timer-secondary-btn" : "timer-secondary-btn timer-full-span"}
               onClick={() => onStart(timer.mode === "pomodoro" ? "stopwatch" : "pomodoro")}
               disabled={timer.status === "running"}
             >
-              Switch to {timer.mode === "pomodoro" ? "stopwatch" : "pomodoro"}
+              {timer.mode === "pomodoro" ? "Stopwatch" : "Pomodoro"}
             </button>
             {timer.mode === "pomodoro" && (
-              <button onClick={onSwitchPhase} disabled={timer.status === "running"}>
-                Switch to {timer.phase === "work" ? "break" : "work"}
+              <button className="timer-secondary-btn" onClick={onSwitchPhase} disabled={timer.status === "running"}>
+                Skip to {timer.phase === "work" ? "break" : "work"}
               </button>
             )}
+            {timer.mode === "pomodoro" &&
+              (editingDurations ? null : (
+                <button
+                  type="button"
+                  className="timer-secondary-btn timer-full-span"
+                  disabled={!canEdit}
+                  onClick={() => setEditingDurations(true)}
+                >
+                  Edit durations
+                </button>
+              ))}
           </div>
 
           {timer.mode === "pomodoro" && (
-            <div className="timer-durations">
-              {editingDurations ? (
-                <form className="timer-durations-form" onSubmit={handleDurationsSubmit}>
-                  <label>
-                    Work (min)
-                    <input
-                      type="number"
-                      min={1}
-                      max={180}
-                      value={workMinutesDraft}
-                      onChange={(e) => setWorkMinutesDraft(Number(e.target.value))}
-                    />
-                  </label>
-                  <label>
-                    Break (min)
-                    <input
-                      type="number"
-                      min={1}
-                      max={180}
-                      value={breakMinutesDraft}
-                      onChange={(e) => setBreakMinutesDraft(Number(e.target.value))}
-                    />
-                  </label>
-                  <div className="timer-durations-actions">
-                    <button type="submit">Save</button>
-                    <button type="button" onClick={() => setEditingDurations(false)}>
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <button type="button" disabled={!canEdit} onClick={() => setEditingDurations(true)}>
-                  Edit durations
+            <label className="timer-auto-break toggle-switch">
+              <span>Auto-start next phase</span>
+              <input
+                type="checkbox"
+                checked={autoBreak}
+                onChange={(e) => onAutoBreakChange(e.target.checked)}
+              />
+              <span className="switch-slider" />
+            </label>
+          )}
+
+          {timer.mode === "pomodoro" && editingDurations && (
+            <form className="timer-durations-form" onSubmit={handleDurationsSubmit}>
+              <label>
+                Work (min)
+                <input
+                  type="number"
+                  min={1}
+                  max={180}
+                  value={workMinutesDraft}
+                  onChange={(e) => setWorkMinutesDraft(Number(e.target.value))}
+                />
+              </label>
+              <label>
+                Break (min)
+                <input
+                  type="number"
+                  min={1}
+                  max={180}
+                  value={breakMinutesDraft}
+                  onChange={(e) => setBreakMinutesDraft(Number(e.target.value))}
+                />
+              </label>
+              <div className="timer-durations-actions">
+                <button type="submit">Save</button>
+                <button type="button" className="timer-secondary-btn" onClick={() => setEditingDurations(false)}>
+                  Cancel
                 </button>
-              )}
-            </div>
+              </div>
+            </form>
           )}
 
           <label className="timer-sound-picker">
