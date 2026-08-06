@@ -1,13 +1,12 @@
 import Phaser from "phaser";
 import type { PlayerDTO } from "../socket/types";
-import { CHARACTER_PRESETS } from "./characterPresets";
+import { CHARACTER_PRESETS, type CharacterPose } from "./characterPresets";
 
 const MOVE_EMIT_INTERVAL_MS = 60;
 const BUBBLE_DURATION_MS = 8000;
-const SPRITE_NATIVE_HEIGHT = 160;
-const SPRITE_DISPLAY_HEIGHT = 84;
-const SPRITE_SCALE = SPRITE_DISPLAY_HEIGHT / SPRITE_NATIVE_HEIGHT;
-const HIT_WIDTH = 56;
+const SPRITE_DISPLAY_HEIGHT = 84 * 1.2;
+const HIT_WIDTH = 56 * 1.2;
+const MOVE_EPSILON = 0.5;
 const DEFAULT_BACKGROUND_URL = "/assets/map.png";
 export const FONT_FAMILY = "'Courier New', Courier, monospace";
 export const WORLD_WIDTH = 1536;
@@ -18,10 +17,22 @@ function isTypingInFormField(): boolean {
   return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
 }
 
+function spriteKey(character: string, pose: CharacterPose): string {
+  return `${character}:${pose}`;
+}
+
+function resolveDirectionFromDelta(dx: number, dy: number): CharacterPose {
+  if (Math.abs(dx) < MOVE_EPSILON && Math.abs(dy) < MOVE_EPSILON) return "still";
+  if (Math.abs(dx) >= Math.abs(dy)) return dx < 0 ? "left" : "right";
+  return dy < 0 ? "up" : "down";
+}
+
 interface PlayerVisual {
   container: Phaser.GameObjects.Container;
   sprite: Phaser.GameObjects.Image;
   label: Phaser.GameObjects.Text;
+  character: string;
+  direction: CharacterPose;
   bubble?: Phaser.GameObjects.Text;
   bubbleTimer?: Phaser.Time.TimerEvent;
 }
@@ -47,13 +58,17 @@ export class MainScene extends Phaser.Scene {
   preload() {
     this.load.image("map", DEFAULT_BACKGROUND_URL);
     for (const preset of CHARACTER_PRESETS) {
-      this.load.image(preset.id, preset.spriteUrl);
+      for (const [pose, url] of Object.entries(preset.sprites)) {
+        this.load.image(spriteKey(preset.id, pose as CharacterPose), url);
+      }
     }
   }
 
   create() {
     this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    this.updateCameraZoom();
+    this.scale.on(Phaser.Scale.Events.RESIZE, () => this.updateCameraZoom());
 
     this.backgroundImage = this.add
       .image(0, 0, "map")
@@ -82,6 +97,7 @@ export class MainScene extends Phaser.Scene {
     const speed = 200;
 
     body.setVelocity(0);
+    let direction: CharacterPose = "still";
     if (!isTypingInFormField()) {
       const left = this.cursors.left.isDown || this.wasd?.left.isDown;
       const right = this.cursors.right.isDown || this.wasd?.right.isDown;
@@ -92,6 +108,15 @@ export class MainScene extends Phaser.Scene {
       else if (right) body.setVelocityX(speed);
       if (up) body.setVelocityY(-speed);
       else if (down) body.setVelocityY(speed);
+
+      if (left) direction = "left";
+      else if (right) direction = "right";
+      else if (up) direction = "up";
+      else if (down) direction = "down";
+    }
+
+    if (direction !== this.localVisual.direction) {
+      this.applyCharacter(this.localVisual, this.selfCharacter, direction);
     }
 
     this.updateAttachments(this.localVisual);
@@ -119,7 +144,7 @@ export class MainScene extends Phaser.Scene {
     this.selfCharacter = character;
     if (this.localVisual) {
       this.localVisual.label.setText(displayName);
-      this.applyCharacter(this.localVisual, character);
+      this.applyCharacter(this.localVisual, character, this.localVisual.direction);
     }
   }
 
@@ -135,6 +160,11 @@ export class MainScene extends Phaser.Scene {
     this.load.image(key, targetUrl);
     this.load.once(`filecomplete-image-${key}`, () => this.applyBackgroundTexture(key));
     this.load.start();
+  }
+
+  private updateCameraZoom() {
+    const zoom = Math.max(this.scale.width / WORLD_WIDTH, this.scale.height / WORLD_HEIGHT);
+    this.cameras.main.setZoom(zoom);
   }
 
   private applyBackgroundTexture(key: string) {
@@ -180,9 +210,11 @@ export class MainScene extends Phaser.Scene {
         visual = this.createVisual(player.x, player.y, player.character, player.displayName, false, player.id);
         this.otherVisuals.set(player.id, visual);
       } else {
+        const dx = player.x - visual.container.x;
+        const dy = player.y - visual.container.y;
         visual.container.setPosition(player.x, player.y);
         visual.label.setText(player.displayName);
-        this.applyCharacter(visual, player.character);
+        this.applyCharacter(visual, player.character, resolveDirectionFromDelta(dx, dy));
         this.updateAttachments(visual);
       }
     }
@@ -206,7 +238,7 @@ export class MainScene extends Phaser.Scene {
     withPhysics = false,
     clickId?: string,
   ): PlayerVisual {
-    const sprite = this.add.image(0, 0, character).setScale(SPRITE_SCALE);
+    const sprite = this.add.image(0, 0, spriteKey(character, "still"));
 
     const container = this.add.container(x, y, [sprite]);
     container.setSize(HIT_WIDTH, SPRITE_DISPLAY_HEIGHT);
@@ -228,11 +260,19 @@ export class MainScene extends Phaser.Scene {
     });
     label.setOrigin(0.5, 1);
 
-    return { container, sprite, label };
+    const visual: PlayerVisual = { container, sprite, label, character, direction: "still" };
+    this.applyCharacter(visual, character, "still");
+    return visual;
   }
 
-  private applyCharacter(visual: PlayerVisual, character: string) {
-    visual.sprite.setTexture(character);
+  private applyCharacter(visual: PlayerVisual, character: string, direction: CharacterPose) {
+    visual.character = character;
+    visual.direction = direction;
+    const key = spriteKey(character, direction);
+    if (!this.textures.exists(key)) return;
+    visual.sprite.setTexture(key);
+    const frame = this.textures.get(key).getSourceImage() as HTMLImageElement;
+    visual.sprite.setScale(SPRITE_DISPLAY_HEIGHT / frame.height);
   }
 
   private updateAttachments(visual: PlayerVisual) {

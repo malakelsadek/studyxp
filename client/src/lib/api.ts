@@ -44,6 +44,7 @@ export interface RoomSummary {
   name: string;
   maxCapacity: number;
   currentCount: number;
+  hasPassword: boolean;
 }
 
 export const MAX_ROOM_CAPACITY = 20;
@@ -83,6 +84,15 @@ async function getJson<T>(path: string): Promise<T> {
   return handleResponse<T>(res);
 }
 
+async function deleteJson<T>(path: string, body: unknown, token: string): Promise<T> {
+  const res = await fetch(`${SERVER_URL}${path}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+  return handleResponse<T>(res);
+}
+
 export function registerRequest(email: string, password: string, displayName: string) {
   return postJson<AuthResponse>("/auth/register", { email, password, displayName });
 }
@@ -109,14 +119,6 @@ export function postStudySession(
   return postJson<{ coins: number }>("/stats/sessions", session, token);
 }
 
-export function purchaseCharacter(token: string, characterId: string) {
-  return postJson<{ ownedCharacters: string[]; coins: number }>(
-    "/users/me/purchase-character",
-    { characterId },
-    token,
-  );
-}
-
 export function listRooms() {
   return getJson<RoomSummary[]>("/rooms");
 }
@@ -124,10 +126,18 @@ export function listRooms() {
 export function changeRoomPassword(
   token: string,
   roomId: string,
-  oldPassword: string,
+  oldPassword: string | undefined,
   newPassword: string,
 ) {
-  return patchJson<{ ok: true }>(`/rooms/${roomId}/password`, { oldPassword, newPassword }, token);
+  return patchJson<{ ok: true; hasPassword: boolean }>(
+    `/rooms/${roomId}/password`,
+    { oldPassword, newPassword },
+    token,
+  );
+}
+
+export function removeRoomPassword(token: string, roomId: string, password?: string) {
+  return deleteJson<{ ok: true; hasPassword: boolean }>(`/rooms/${roomId}/password`, { password }, token);
 }
 
 export async function uploadRoomBackground(token: string, roomId: string, file: File) {

@@ -101,6 +101,8 @@ export function RoomPage() {
     name,
     backgroundUrl,
     maxCapacity,
+    hasPassword,
+    setHasPassword,
     joinError,
     selfProfile,
     move,
@@ -279,19 +281,22 @@ export function RoomPage() {
             <RoomSettings
               roomId={roomId}
               token={token}
+              currentUserEmail={user.email ?? null}
               currentName={name}
               onNameChange={broadcastName}
               currentBackgroundUrl={backgroundUrl}
               onBackgroundChange={broadcastBackground}
               currentCapacity={maxCapacity}
               onCapacityChange={setMaxCapacity}
+              currentHasPassword={hasPassword}
+              onHasPasswordChange={setHasPassword}
             />
           </Tile>
         )}
 
         {openPanels.outfit && (
           <Tile title="Outfit" initialPosition={{ x: 480, y: 448 }} onClose={() => togglePanel("outfit")}>
-            <OutfitPanel currentCharacter={user.character} ownedCharacters={user.ownedCharacters} />
+            <OutfitPanel currentCharacter={user.character} />
           </Tile>
         )}
 

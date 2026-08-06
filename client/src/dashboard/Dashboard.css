@@ -24,7 +24,19 @@
 .dashboard-topbar-actions {
   margin-left: auto;
   display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.dashboard-topbar-coins {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: #2a2a3d;
+  border: 2px solid #0d0d14;
+  color: #facc15;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .dashboard-topbar-actions button {
@@ -89,34 +101,9 @@
   background: #2f4a37;
 }
 
-.character-option.locked {
-  opacity: 0.7;
-}
-
-.character-option:disabled {
-  cursor: not-allowed;
-  opacity: 0.4;
-}
-
-.character-price {
-  color: #facc15;
-  font-size: 10px;
-}
-
 .character-equipped {
   color: #4ade80;
   font-size: 10px;
-}
-
-.coin-balance {
-  display: inline-block;
-  margin-bottom: 12px;
-  padding: 6px 12px;
-  background: #2a2a3d;
-  border: 2px solid #0d0d14;
-  box-shadow: var(--pixel-shadow-sm);
-  color: #facc15;
-  font-size: 12px;
 }
 
 .room-list {

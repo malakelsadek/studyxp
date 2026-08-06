@@ -30,6 +30,7 @@ export function useRoomState(roomId: string) {
   const [name, setName] = useState("");
   const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
   const [maxCapacity, setMaxCapacity] = useState(20);
+  const [hasPassword, setHasPassword] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joined, setJoined] = useState(false);
   const [selfProfile, setSelfProfile] = useState<SelfProfile | null>(null);
@@ -69,6 +70,7 @@ export function useRoomState(roomId: string) {
       name: string;
       backgroundUrl: string | null;
       maxCapacity: number;
+      hasPassword: boolean;
       selfProfile: SelfProfile | null;
     }) => {
       setSelfId(snapshot.selfId);
@@ -85,6 +87,7 @@ export function useRoomState(roomId: string) {
       setName(snapshot.name);
       setBackgroundUrl(snapshot.backgroundUrl ? resolveAssetUrl(snapshot.backgroundUrl) : null);
       setMaxCapacity(snapshot.maxCapacity);
+      setHasPassword(snapshot.hasPassword);
       setSelfProfile(snapshot.selfProfile);
       setJoined(true);
     };
@@ -232,6 +235,8 @@ export function useRoomState(roomId: string) {
     name,
     backgroundUrl,
     maxCapacity,
+    hasPassword,
+    setHasPassword,
     joinError,
     selfProfile,
     move,

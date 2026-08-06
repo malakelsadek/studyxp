@@ -632,6 +632,12 @@
   white-space: nowrap;
 }
 
+.outfit-grid-scroll {
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
 .outfit-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
@@ -654,11 +660,6 @@
 .outfit-option.selected {
   border-color: #4ade80 !important;
   background: #2f4a37;
-}
-
-.outfit-hint {
-  margin: 10px 0 0;
-  font-size: 11px;
 }
 
 .room-settings-form {
@@ -713,12 +714,6 @@
   font-size: 11px;
 }
 
-.room-settings-divider {
-  height: 3px;
-  background: #0d0d14;
-  margin: 8px 0;
-}
-
 .room-settings-label {
   font-size: 11px;
   color: #aaa;
@@ -730,6 +725,66 @@
   background: none;
   color: #eee;
   font-size: 11px;
+}
+
+.room-settings-section {
+  border-bottom: 1px solid #0d0d14;
+}
+
+.room-settings-section:last-child {
+  border-bottom: none;
+}
+
+.room-settings-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px 8px 2px;
+  background: none;
+  border: none;
+  color: #eee;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.room-settings-section-header:hover {
+  color: #4ade80;
+}
+
+.room-settings-section-chevron {
+  flex-shrink: 0;
+  color: #888;
+  font-size: 10px;
+  transition: transform 0.15s ease;
+}
+
+.room-settings-section.open .room-settings-section-chevron {
+  transform: rotate(90deg);
+}
+
+.room-settings-section-title {
+  flex-shrink: 0;
+}
+
+.room-settings-section-meta {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  color: #888;
+  font-size: 11px;
+}
+
+.room-settings-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 2px 2px 12px;
 }
 
 .calendar-panel {

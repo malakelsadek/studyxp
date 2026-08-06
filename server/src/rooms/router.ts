@@ -2,7 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "../prisma.js";
-import { requireAuth } from "../auth/requireAuth.js";
+import { requireRoomAdmin } from "../auth/requireRoomAdmin.js";
 import { getPlayerCount } from "../socket/rooms.js";
 import { deleteUploadedFile, uploadRoomBackground } from "./upload.js";
 
@@ -12,29 +12,36 @@ const MAX_ROOM_CAPACITY = 20;
 
 roomsRouter.get("/", async (_req, res) => {
   const rooms = await prisma.room.findMany({
-    select: { id: true, name: true, maxCapacity: true },
+    select: { id: true, name: true, maxCapacity: true, passwordHash: true },
     orderBy: { createdAt: "asc" },
   });
-  res.json(rooms.map((room) => ({ ...room, currentCount: getPlayerCount(room.id) })));
+  res.json(
+    rooms.map(({ passwordHash, ...room }) => ({
+      ...room,
+      hasPassword: passwordHash !== null,
+      currentCount: getPlayerCount(room.id),
+    })),
+  );
 });
 
 roomsRouter.get("/:id", async (req, res) => {
   const room = await prisma.room.findUnique({
     where: { id: req.params.id },
-    select: { id: true, name: true, backgroundUrl: true, maxCapacity: true },
+    select: { id: true, name: true, backgroundUrl: true, maxCapacity: true, passwordHash: true },
   });
   if (!room) {
     return res.status(404).json({ error: "Room not found" });
   }
-  res.json({ ...room, currentCount: getPlayerCount(room.id) });
+  const { passwordHash, ...rest } = room;
+  res.json({ ...rest, hasPassword: passwordHash !== null, currentCount: getPlayerCount(room.id) });
 });
 
 const changePasswordSchema = z.object({
-  oldPassword: z.string().min(1),
+  oldPassword: z.string().optional(),
   newPassword: z.string().min(4).max(100),
 });
 
-roomsRouter.patch("/:id/password", requireAuth, async (req, res) => {
+roomsRouter.patch("/:id/password", requireRoomAdmin, async (req, res) => {
   const parsed = changePasswordSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
@@ -45,21 +52,49 @@ roomsRouter.patch("/:id/password", requireAuth, async (req, res) => {
     return res.status(404).json({ error: "Room not found" });
   }
 
-  const valid = await bcrypt.compare(parsed.data.oldPassword, room.passwordHash);
-  if (!valid) {
-    return res.status(401).json({ error: "Current password is incorrect" });
+  if (room.passwordHash) {
+    const valid = !!parsed.data.oldPassword && (await bcrypt.compare(parsed.data.oldPassword, room.passwordHash));
+    if (!valid) {
+      return res.status(401).json({ error: "Current password is incorrect" });
+    }
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.newPassword, 12);
   await prisma.room.update({ where: { id: room.id }, data: { passwordHash } });
-  res.json({ ok: true });
+  res.json({ ok: true, hasPassword: true });
+});
+
+const removePasswordSchema = z.object({
+  password: z.string().optional(),
+});
+
+roomsRouter.delete("/:id/password", requireRoomAdmin, async (req, res) => {
+  const parsed = removePasswordSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.flatten() });
+  }
+
+  const room = await prisma.room.findUnique({ where: { id: req.params.id } });
+  if (!room) {
+    return res.status(404).json({ error: "Room not found" });
+  }
+
+  if (room.passwordHash) {
+    const valid = !!parsed.data.password && (await bcrypt.compare(parsed.data.password, room.passwordHash));
+    if (!valid) {
+      return res.status(401).json({ error: "Current password is incorrect" });
+    }
+  }
+
+  await prisma.room.update({ where: { id: room.id }, data: { passwordHash: null } });
+  res.json({ ok: true, hasPassword: false });
 });
 
 const changeNameSchema = z.object({
   name: z.string().trim().min(1).max(50),
 });
 
-roomsRouter.patch("/:id/name", requireAuth, async (req, res) => {
+roomsRouter.patch("/:id/name", requireRoomAdmin, async (req, res) => {
   const parsed = changeNameSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
@@ -78,7 +113,7 @@ const changeCapacitySchema = z.object({
   maxCapacity: z.number().int().min(1).max(MAX_ROOM_CAPACITY),
 });
 
-roomsRouter.patch("/:id/capacity", requireAuth, async (req, res) => {
+roomsRouter.patch("/:id/capacity", requireRoomAdmin, async (req, res) => {
   const parsed = changeCapacitySchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
@@ -96,7 +131,7 @@ roomsRouter.patch("/:id/capacity", requireAuth, async (req, res) => {
   res.json({ maxCapacity: parsed.data.maxCapacity });
 });
 
-roomsRouter.post("/:id/background", requireAuth, uploadRoomBackground.single("background"), async (req, res) => {
+roomsRouter.post("/:id/background", requireRoomAdmin, uploadRoomBackground.single("background"), async (req, res) => {
   const room = await prisma.room.findUnique({ where: { id: req.params.id } });
   if (!room) {
     return res.status(404).json({ error: "Room not found" });
@@ -112,7 +147,7 @@ roomsRouter.post("/:id/background", requireAuth, uploadRoomBackground.single("ba
   res.json({ backgroundUrl });
 });
 
-roomsRouter.delete("/:id/background", requireAuth, async (req, res) => {
+roomsRouter.delete("/:id/background", requireRoomAdmin, async (req, res) => {
   const room = await prisma.room.findUnique({ where: { id: req.params.id } });
   if (!room) {
     return res.status(404).json({ error: "Room not found" });

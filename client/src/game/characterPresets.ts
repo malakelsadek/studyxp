@@ -1,22 +1,37 @@
-export const CHARACTER_PRICE_COINS = 5;
+export type CharacterPose = "still" | "up" | "down" | "left" | "right";
 
 export interface CharacterPreset {
   id: string;
   name: string;
   spriteUrl: string;
-  price: number;
+  sprites: Record<CharacterPose, string>;
+}
+
+function characterSprites(id: string): Record<CharacterPose, string> {
+  return {
+    still: `/assets/characters/${id}-still.png`,
+    up: `/assets/characters/${id}-up.png`,
+    down: `/assets/characters/${id}-down.png`,
+    left: `/assets/characters/${id}-left.png`,
+    right: `/assets/characters/${id}-right.png`,
+  };
+}
+
+function preset(id: string, name: string): CharacterPreset {
+  const sprites = characterSprites(id);
+  return { id, name, sprites, spriteUrl: sprites.still };
 }
 
 export const CHARACTER_PRESETS: CharacterPreset[] = [
-  { id: "char-1", name: "Prep", spriteUrl: "/assets/characters/char-1.png", price: 0 },
-  { id: "char-2", name: "Uniform", spriteUrl: "/assets/characters/char-2.png", price: 0 },
-  { id: "char-3", name: "Hoodie", spriteUrl: "/assets/characters/char-3.png", price: CHARACTER_PRICE_COINS },
-  { id: "char-4", name: "Bookworm", spriteUrl: "/assets/characters/char-4.png", price: CHARACTER_PRICE_COINS },
-  { id: "char-5", name: "Scholar", spriteUrl: "/assets/characters/char-5.png", price: CHARACTER_PRICE_COINS },
-  { id: "char-6", name: "Hijabi", spriteUrl: "/assets/characters/char-6.png", price: CHARACTER_PRICE_COINS },
+  preset("char-1", "Buns"),
+  preset("char-2", "Wavy"),
+  preset("char-3", "Curls"),
+  preset("char-4", "Specs"),
+  preset("char-5", "Scholar"),
+  preset("char-6", "Bookworm"),
 ];
 
-export const FREE_CHARACTER_IDS = CHARACTER_PRESETS.filter((c) => c.price === 0).map((c) => c.id);
+export const ALL_CHARACTER_IDS = CHARACTER_PRESETS.map((c) => c.id);
 
 export const DEFAULT_CHARACTER_ID = CHARACTER_PRESETS[0].id;
 
