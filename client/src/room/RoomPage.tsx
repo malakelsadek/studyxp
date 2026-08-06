@@ -3,11 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { PhaserGame } from "../game/PhaserGame";
 import { useRoomState } from "./useRoomState";
-import { usePersonalTimer } from "./usePersonalTimer";
 import { useStudySessionLogger } from "./useStudySessionLogger";
 import { ChatOverlay } from "./ChatOverlay";
 import { TimerTile } from "./TimerTile";
 import { TodoTile } from "./TodoTile";
+import { PeopleProgress } from "./PeopleProgress";
 import { ShortcutsPanel } from "./ShortcutsPanel";
 import { RoomSettings } from "./RoomSettings";
 import { LeaderboardPanel } from "./LeaderboardPanel";
@@ -26,7 +26,7 @@ import "./RoomPage.css";
 
 export function RoomPage() {
   const { roomId = "lobby" } = useParams();
-  const { user, token, logout, setCoins } = useAuth();
+  const { user, token, logout, setCoins, syncProfile } = useAuth();
   const navigate = useNavigate();
   const [openPanels, setOpenPanels] = useState<Record<PanelKey, boolean>>({
     settings: false,
@@ -36,6 +36,7 @@ export function RoomPage() {
     calendar: false,
     music: false,
     outfit: false,
+    people: false,
   });
   const [chatActive, setChatActive] = useState(false);
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
@@ -69,6 +70,12 @@ export function RoomPage() {
       } else if (key === "b") {
         e.preventDefault();
         setOpenPanels((prev) => ({ ...prev, calendar: !prev.calendar }));
+      } else if (key === "p") {
+        e.preventDefault();
+        setOpenPanels((prev) => ({ ...prev, people: !prev.people }));
+      } else if (key === "m") {
+        e.preventDefault();
+        setOpenPanels((prev) => ({ ...prev, music: !prev.music }));
       }
     };
 
@@ -83,15 +90,18 @@ export function RoomPage() {
     players,
     messages,
     timer,
+    personalTimer: personalTimerState,
     todos,
     personalTodos,
     leaderboard,
     timeBlocks,
+    sharedTimeBlocks,
     musicUrl,
     name,
     backgroundUrl,
     maxCapacity,
     joinError,
+    selfProfile,
     move,
     sendChat,
     startTimer,
@@ -99,6 +109,11 @@ export function RoomPage() {
     resetTimer,
     switchTimerPhase,
     configureTimer,
+    startPersonalTimer,
+    pausePersonalTimer,
+    resetPersonalTimer,
+    switchPersonalTimerPhase,
+    configurePersonalTimer,
     addTodo,
     toggleTodo,
     removeTodo,
@@ -113,16 +128,29 @@ export function RoomPage() {
     logStudyTime,
     addTimeBlock,
     removeTimeBlock,
+    addSharedTimeBlock,
+    removeSharedTimeBlock,
     setMusicUrl,
   } = useRoomState(roomId);
 
-  const personalTimer = usePersonalTimer();
+  const personalTimer = {
+    timer: personalTimerState,
+    startTimer: startPersonalTimer,
+    pauseTimer: pausePersonalTimer,
+    resetTimer: resetPersonalTimer,
+    switchPhase: switchPersonalTimerPhase,
+    configureDurations: configurePersonalTimer,
+  };
   const { soundId, setSoundId, play: playTimerDoneSound } = useTimerSoundPreference();
 
   useStudySessionLogger(timer, roomId, token, logStudyTime, setCoins);
   useStudySessionLogger(personalTimer.timer, roomId, token, logStudyTime, setCoins);
   useTimerCompletionSound(timer, playTimerDoneSound);
   useTimerCompletionSound(personalTimer.timer, playTimerDoneSound);
+
+  useEffect(() => {
+    if (selfProfile) syncProfile(selfProfile);
+  }, [selfProfile, syncProfile]);
 
   const celebrate = useCallback(() => {
     playPartySound();
@@ -203,8 +231,9 @@ export function RoomPage() {
         {openPanels.todo && (
           <Tile title="To-do" initialPosition={{ x: 880, y: 260 }} onClose={() => togglePanel("todo")}>
             <TodoTile
+              onOpenPeople={() => togglePanel("people")}
+              peopleOpen={openPanels.people}
               selfId={selfId}
-              players={players}
               sharedTodos={todos}
               onSharedAdd={addTodo}
               onSharedToggle={toggleTodo}
@@ -216,6 +245,12 @@ export function RoomPage() {
               onPersonalRemove={removePersonalTodo}
               onPersonalReorder={reorderPersonalTodos}
             />
+          </Tile>
+        )}
+
+        {openPanels.people && (
+          <Tile title="People" initialPosition={{ x: 880, y: 448 }} onClose={() => togglePanel("people")}>
+            <PeopleProgress players={players} personalTodos={personalTodos} selfId={selfId} />
           </Tile>
         )}
 
@@ -263,9 +298,12 @@ export function RoomPage() {
           >
             <CalendarPanel
               timeBlocks={timeBlocks}
+              sharedTimeBlocks={sharedTimeBlocks}
               personalTodos={selfId ? (personalTodos[selfId] ?? []) : []}
               onAdd={addTimeBlock}
               onRemove={removeTimeBlock}
+              onSharedAdd={addSharedTimeBlock}
+              onSharedRemove={removeSharedTimeBlock}
             />
           </Tile>
         )}

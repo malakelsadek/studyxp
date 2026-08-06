@@ -1,13 +1,13 @@
 import { useState } from "react";
-import type { PersonalTodoItem, PlayerDTO, TodoItem } from "../socket/types";
+import type { PersonalTodoItem, TodoItem } from "../socket/types";
 import { TodoList } from "./TodoList";
-import { PeopleProgress } from "./PeopleProgress";
 
-type TodoTab = "shared" | "personal" | "people";
+type TodoTab = "shared" | "personal";
 
 interface TodoTileProps {
+  onOpenPeople: () => void;
+  peopleOpen: boolean;
   selfId: string | null;
-  players: Record<string, PlayerDTO>;
   sharedTodos: TodoItem[];
   onSharedAdd: (text: string, estimatedMinutes: number | null) => void;
   onSharedToggle: (id: string) => void;
@@ -21,8 +21,9 @@ interface TodoTileProps {
 }
 
 export function TodoTile({
+  onOpenPeople,
+  peopleOpen,
   selfId,
-  players,
   sharedTodos,
   onSharedAdd,
   onSharedToggle,
@@ -46,7 +47,7 @@ export function TodoTile({
         <button className={tab === "personal" ? "active" : ""} onClick={() => setTab("personal")}>
           Personal
         </button>
-        <button className={tab === "people" ? "active" : ""} onClick={() => setTab("people")}>
+        <button className={peopleOpen ? "active" : ""} onClick={onOpenPeople} title="People (Alt+P)">
           People
         </button>
       </div>
@@ -72,8 +73,6 @@ export function TodoTile({
           showPrivateToggle
         />
       )}
-
-      {tab === "people" && <PeopleProgress players={players} personalTodos={personalTodos} selfId={selfId} />}
     </div>
   );
 }

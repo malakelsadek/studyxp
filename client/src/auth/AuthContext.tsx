@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { loginRequest, registerRequest, type AuthUser } from "../lib/api";
 import { DEFAULT_CHARACTER_ID, FREE_CHARACTER_IDS } from "../game/characterPresets";
 
@@ -26,6 +26,7 @@ interface AuthContextValue extends AuthState {
   updateCharacter: (character: string) => void;
   applyPurchase: (ownedCharacters: string[], coins: number) => void;
   setCoins: (coins: number) => void;
+  syncProfile: (profile: { displayName: string; character: string; ownedCharacters: string[]; coins: number }) => void;
 }
 
 const STORAGE_KEY = "studyxp.auth";
@@ -61,17 +62,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     const res = await loginRequest(email, password);
     setState({ token: res.token, user: toSessionUser(res.user) });
-  };
+  }, []);
 
-  const register = async (email: string, password: string, displayName: string) => {
+  const register = useCallback(async (email: string, password: string, displayName: string) => {
     const res = await registerRequest(email, password, displayName);
     setState({ token: res.token, user: toSessionUser(res.user) });
-  };
+  }, []);
 
-  const continueAsGuest = (displayName: string, character: string = DEFAULT_CHARACTER_ID) => {
+  const continueAsGuest = useCallback((displayName: string, character: string = DEFAULT_CHARACTER_ID) => {
     setState({
       token: null,
       user: {
@@ -83,25 +84,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isGuest: true,
       },
     });
-  };
+  }, []);
 
-  const logout = () => setState({ token: null, user: null });
+  const logout = useCallback(() => setState({ token: null, user: null }), []);
 
-  const updateDisplayName = (displayName: string) => {
+  const updateDisplayName = useCallback((displayName: string) => {
     setState((prev) => (prev.user ? { ...prev, user: { ...prev.user, displayName } } : prev));
-  };
+  }, []);
 
-  const updateCharacter = (character: string) => {
+  const updateCharacter = useCallback((character: string) => {
     setState((prev) => (prev.user ? { ...prev, user: { ...prev.user, character } } : prev));
-  };
+  }, []);
 
-  const applyPurchase = (ownedCharacters: string[], coins: number) => {
+  const applyPurchase = useCallback((ownedCharacters: string[], coins: number) => {
     setState((prev) => (prev.user ? { ...prev, user: { ...prev.user, ownedCharacters, coins } } : prev));
-  };
+  }, []);
 
-  const setCoins = (coins: number) => {
+  const setCoins = useCallback((coins: number) => {
     setState((prev) => (prev.user ? { ...prev, user: { ...prev.user, coins } } : prev));
-  };
+  }, []);
+
+  const syncProfile = useCallback(
+    (profile: { displayName: string; character: string; ownedCharacters: string[]; coins: number }) => {
+      setState((prev) => (prev.user ? { ...prev, user: { ...prev.user, ...profile } } : prev));
+    },
+    [],
+  );
 
   return (
     <AuthContext.Provider
@@ -115,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         updateCharacter,
         applyPurchase,
         setCoins,
+        syncProfile,
       }}
     >
       {children}

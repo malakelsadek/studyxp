@@ -30,6 +30,7 @@ export class MainScene extends Phaser.Scene {
   private localVisual?: PlayerVisual;
   private otherVisuals = new Map<string, PlayerVisual>();
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
+  private wasd?: Record<"up" | "down" | "left" | "right", Phaser.Input.Keyboard.Key>;
   private backgroundImage?: Phaser.GameObjects.Image;
   private selfId: string | null = null;
   private selfDisplayName = "You";
@@ -69,6 +70,9 @@ export class MainScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.localVisual.container, true, 0.12, 0.12);
 
     this.cursors = this.input.keyboard?.createCursorKeys();
+    this.wasd = this.input.keyboard?.addKeys({ up: "W", down: "S", left: "A", right: "D" }) as
+      | Record<"up" | "down" | "left" | "right", Phaser.Input.Keyboard.Key>
+      | undefined;
     this.input.keyboard?.disableGlobalCapture();
   }
 
@@ -79,10 +83,15 @@ export class MainScene extends Phaser.Scene {
 
     body.setVelocity(0);
     if (!isTypingInFormField()) {
-      if (this.cursors.left.isDown) body.setVelocityX(-speed);
-      else if (this.cursors.right.isDown) body.setVelocityX(speed);
-      if (this.cursors.up.isDown) body.setVelocityY(-speed);
-      else if (this.cursors.down.isDown) body.setVelocityY(speed);
+      const left = this.cursors.left.isDown || this.wasd?.left.isDown;
+      const right = this.cursors.right.isDown || this.wasd?.right.isDown;
+      const up = this.cursors.up.isDown || this.wasd?.up.isDown;
+      const down = this.cursors.down.isDown || this.wasd?.down.isDown;
+
+      if (left) body.setVelocityX(-speed);
+      else if (right) body.setVelocityX(speed);
+      if (up) body.setVelocityY(-speed);
+      else if (down) body.setVelocityY(speed);
     }
 
     this.updateAttachments(this.localVisual);

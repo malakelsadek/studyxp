@@ -56,6 +56,14 @@ export interface TimeBlock {
   endMinute: number;
   label: string;
   tasks: string[];
+  addedBy: string;
+}
+
+export interface SelfProfile {
+  displayName: string;
+  character: string;
+  ownedCharacters: string[];
+  coins: number;
 }
 
 export interface RoomSnapshot {
@@ -63,15 +71,18 @@ export interface RoomSnapshot {
   selfId: string;
   players: PlayerDTO[];
   timer: TimerState;
+  personalTimer: TimerState;
   messages: ChatMessage[];
   todos: TodoItem[];
   personalTodos: Record<string, PersonalTodoItem[]>;
   leaderboard: LeaderboardEntry[];
   timeBlocks: TimeBlock[];
+  sharedTimeBlocks: TimeBlock[];
   musicUrl: string | null;
   name: string;
   backgroundUrl: string | null;
   maxCapacity: number;
+  selfProfile: SelfProfile | null;
 }
 
 export interface ClientToServerEvents {
@@ -104,6 +115,19 @@ export interface ClientToServerEvents {
     tasks: string[];
   }) => void;
   "timeblock:remove": (payload: { id: string }) => void;
+  "sharedTimeblock:add": (payload: {
+    date: string;
+    startMinute: number;
+    endMinute: number;
+    label: string;
+    tasks: string[];
+  }) => void;
+  "sharedTimeblock:remove": (payload: { id: string }) => void;
+  "personalTimer:start": (payload: { mode: TimerMode }) => void;
+  "personalTimer:pause": () => void;
+  "personalTimer:reset": () => void;
+  "personalTimer:switchPhase": () => void;
+  "personalTimer:configure": (payload: { workDurationMs: number; breakDurationMs: number }) => void;
 }
 
 export interface ServerToClientEvents {
@@ -121,5 +145,7 @@ export interface ServerToClientEvents {
   "leaderboard:update": (payload: { leaderboard: LeaderboardEntry[] }) => void;
   "player:character": (payload: { id: string; character: string }) => void;
   "timeblock:update": (payload: { timeBlocks: TimeBlock[] }) => void;
+  "sharedTimeblock:update": (payload: { sharedTimeBlocks: TimeBlock[] }) => void;
+  "personalTimer:update": (payload: TimerState) => void;
   "room:error": (payload: { message: string }) => void;
 }

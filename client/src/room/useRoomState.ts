@@ -5,6 +5,7 @@ import type {
   LeaderboardEntry,
   PersonalTodoItem,
   PlayerDTO,
+  SelfProfile,
   TimeBlock,
   TimerMode,
   TimerState,
@@ -19,17 +20,29 @@ export function useRoomState(roomId: string) {
   const [players, setPlayers] = useState<Record<string, PlayerDTO>>({});
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [timer, setTimer] = useState<TimerState>(defaultTimer());
+  const [personalTimer, setPersonalTimer] = useState<TimerState>(defaultTimer());
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [personalTodos, setPersonalTodos] = useState<Record<string, PersonalTodoItem[]>>({});
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
+  const [sharedTimeBlocks, setSharedTimeBlocks] = useState<TimeBlock[]>([]);
   const [musicUrl, setMusicUrlState] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
   const [maxCapacity, setMaxCapacity] = useState(20);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joined, setJoined] = useState(false);
+  const [selfProfile, setSelfProfile] = useState<SelfProfile | null>(null);
   const joinedRoomId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!connected) {
+      // A dropped connection invalidates the server-side join (a reconnect gets a
+      // fresh socket with no room membership), so force a re-join once we're back.
+      joinedRoomId.current = null;
+      setJoined(false);
+    }
+  }, [connected]);
 
   useEffect(() => {
     if (!socket || !connected) return;
@@ -46,27 +59,33 @@ export function useRoomState(roomId: string) {
       players: PlayerDTO[];
       messages: ChatMessage[];
       timer: TimerState;
+      personalTimer: TimerState;
       todos: TodoItem[];
       personalTodos: Record<string, PersonalTodoItem[]>;
       leaderboard: LeaderboardEntry[];
       timeBlocks: TimeBlock[];
+      sharedTimeBlocks: TimeBlock[];
       musicUrl: string | null;
       name: string;
       backgroundUrl: string | null;
       maxCapacity: number;
+      selfProfile: SelfProfile | null;
     }) => {
       setSelfId(snapshot.selfId);
       setPlayers(Object.fromEntries(snapshot.players.map((p) => [p.id, p])));
       setMessages(snapshot.messages);
       setTimer(snapshot.timer);
+      setPersonalTimer(snapshot.personalTimer);
       setTodos(snapshot.todos);
       setPersonalTodos(snapshot.personalTodos);
       setLeaderboard(snapshot.leaderboard);
       setTimeBlocks(snapshot.timeBlocks);
+      setSharedTimeBlocks(snapshot.sharedTimeBlocks);
       setMusicUrlState(snapshot.musicUrl);
       setName(snapshot.name);
       setBackgroundUrl(snapshot.backgroundUrl ? resolveAssetUrl(snapshot.backgroundUrl) : null);
       setMaxCapacity(snapshot.maxCapacity);
+      setSelfProfile(snapshot.selfProfile);
       setJoined(true);
     };
 
@@ -105,6 +124,9 @@ export function useRoomState(roomId: string) {
       setPlayers((prev) => (prev[id] ? { ...prev, [id]: { ...prev[id], character } } : prev));
     };
     const onTimeBlockUpdate = ({ timeBlocks: next }: { timeBlocks: TimeBlock[] }) => setTimeBlocks(next);
+    const onSharedTimeBlockUpdate = ({ sharedTimeBlocks: next }: { sharedTimeBlocks: TimeBlock[] }) =>
+      setSharedTimeBlocks(next);
+    const onPersonalTimerUpdate = (next: TimerState) => setPersonalTimer(next);
     const onMusicUpdate = ({ url }: { url: string | null }) => setMusicUrlState(url);
     const onRoomError = ({ message }: { message: string }) => {
       joinedRoomId.current = null;
@@ -125,6 +147,8 @@ export function useRoomState(roomId: string) {
     socket.on("leaderboard:update", onLeaderboardUpdate);
     socket.on("player:character", onPlayerCharacter);
     socket.on("timeblock:update", onTimeBlockUpdate);
+    socket.on("sharedTimeblock:update", onSharedTimeBlockUpdate);
+    socket.on("personalTimer:update", onPersonalTimerUpdate);
     socket.on("room:music", onMusicUpdate);
     socket.on("room:error", onRoomError);
 
@@ -142,6 +166,8 @@ export function useRoomState(roomId: string) {
       socket.off("leaderboard:update", onLeaderboardUpdate);
       socket.off("player:character", onPlayerCharacter);
       socket.off("timeblock:update", onTimeBlockUpdate);
+      socket.off("sharedTimeblock:update", onSharedTimeBlockUpdate);
+      socket.off("personalTimer:update", onPersonalTimerUpdate);
       socket.off("room:music", onMusicUpdate);
       socket.off("room:error", onRoomError);
     };
@@ -171,7 +197,21 @@ export function useRoomState(roomId: string) {
   const addTimeBlock = (startMinute: number, endMinute: number, label: string, tasks: string[], date: string) =>
     socket?.emit("timeblock:add", { date, startMinute, endMinute, label, tasks });
   const removeTimeBlock = (id: string) => socket?.emit("timeblock:remove", { id });
+  const addSharedTimeBlock = (
+    startMinute: number,
+    endMinute: number,
+    label: string,
+    tasks: string[],
+    date: string,
+  ) => socket?.emit("sharedTimeblock:add", { date, startMinute, endMinute, label, tasks });
+  const removeSharedTimeBlock = (id: string) => socket?.emit("sharedTimeblock:remove", { id });
   const setMusicUrl = (url: string | null) => socket?.emit("room:music", { url });
+  const startPersonalTimer = (mode: TimerMode) => socket?.emit("personalTimer:start", { mode });
+  const pausePersonalTimer = () => socket?.emit("personalTimer:pause");
+  const resetPersonalTimer = () => socket?.emit("personalTimer:reset");
+  const switchPersonalTimerPhase = () => socket?.emit("personalTimer:switchPhase");
+  const configurePersonalTimer = (workDurationMs: number, breakDurationMs: number) =>
+    socket?.emit("personalTimer:configure", { workDurationMs, breakDurationMs });
 
   return {
     connected,
@@ -180,15 +220,18 @@ export function useRoomState(roomId: string) {
     players,
     messages,
     timer,
+    personalTimer,
     todos,
     personalTodos,
     leaderboard,
     timeBlocks,
+    sharedTimeBlocks,
     musicUrl,
     name,
     backgroundUrl,
     maxCapacity,
     joinError,
+    selfProfile,
     move,
     sendChat,
     startTimer,
@@ -196,6 +239,11 @@ export function useRoomState(roomId: string) {
     resetTimer,
     switchTimerPhase,
     configureTimer,
+    startPersonalTimer,
+    pausePersonalTimer,
+    resetPersonalTimer,
+    switchPersonalTimerPhase,
+    configurePersonalTimer,
     addTodo,
     toggleTodo,
     removeTodo,
@@ -210,6 +258,8 @@ export function useRoomState(roomId: string) {
     logStudyTime,
     addTimeBlock,
     removeTimeBlock,
+    addSharedTimeBlock,
+    removeSharedTimeBlock,
     setMusicUrl,
   };
 }

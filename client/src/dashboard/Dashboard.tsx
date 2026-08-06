@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { listRooms, type RoomSummary } from "../lib/api";
 import { CharacterStore } from "./CharacterStore";
+import { ProfileModal } from "../profile/ProfileModal";
 import "./Dashboard.css";
 
 function roomPasswordKey(roomId: string) {
@@ -10,7 +11,7 @@ function roomPasswordKey(roomId: string) {
 }
 
 export function Dashboard() {
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const routeError = (location.state as { error?: string } | null)?.error ?? null;
@@ -20,6 +21,7 @@ export function Dashboard() {
   const [joiningRoomId, setJoiningRoomId] = useState<string | null>(null);
   const [passwordDraft, setPasswordDraft] = useState("");
   const [error, setError] = useState<string | null>(routeError);
+  const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
     if (!user) navigate("/");
@@ -47,7 +49,12 @@ export function Dashboard() {
         <span>
           {user.displayName} {user.isGuest && "(guest)"}
         </span>
-        <button onClick={() => { logout(); navigate("/"); }}>Log out</button>
+        <div className="dashboard-topbar-actions">
+          <button className="dashboard-profile-btn" onClick={() => setShowProfile(true)}>
+            Profile
+          </button>
+          <button onClick={() => { logout(); navigate("/"); }}>Log out</button>
+        </div>
       </div>
 
       <div className="dashboard-body">
@@ -112,6 +119,17 @@ export function Dashboard() {
           <CharacterStore />
         </section>
       </div>
+
+      {showProfile && (
+        <ProfileModal
+          userId={user.id}
+          isGuest={user.isGuest}
+          fallbackDisplayName={user.displayName}
+          currentUserId={user.id}
+          token={token}
+          onClose={() => setShowProfile(false)}
+        />
+      )}
     </div>
   );
 }

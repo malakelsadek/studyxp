@@ -6,25 +6,32 @@ import { verifyToken } from "../auth/jwt.js";
 import {
   addChatMessage,
   addPersonalTodo,
+  addSharedTimeBlock,
   addTimeBlock,
   addTodo,
   changeCharacter,
+  configurePersonalTimer,
   configureTimer,
   getPlayerCount,
   joinRoom,
   leaveRoom,
   logStudyTime,
   movePlayer,
+  pausePersonalTimer,
   pauseTimer,
   recordTaskCompletion,
   removePersonalTodo,
+  removeSharedTimeBlock,
   removeTimeBlock,
   removeTodo,
   reorderPersonalTodos,
   reorderTodos,
+  resetPersonalTimer,
   resetTimer,
   setMusicUrl,
+  startPersonalTimer,
   startTimer,
+  switchPersonalTimerPhase,
   switchTimerPhase,
   toggleTodo,
   togglePersonalTodo,
@@ -139,6 +146,7 @@ export function registerSocketHandlers(io: AppServer) {
           isGuest: false,
           character: sanitizeOwnedCharacter(user.character, user.ownedCharacters),
           ownedCharacters: user.ownedCharacters,
+          coins: user.coins,
         };
       } else if (guestName && guestName.trim().length > 0) {
         socket.data.user = {
@@ -147,6 +155,7 @@ export function registerSocketHandlers(io: AppServer) {
           isGuest: true,
           character: sanitizeOwnedCharacter(character, FREE_CHARACTER_IDS),
           ownedCharacters: FREE_CHARACTER_IDS,
+          coins: 0,
         };
       } else {
         return next(new Error("authentication required"));
@@ -180,12 +189,27 @@ export function registerSocketHandlers(io: AppServer) {
       socket.data.roomId = roomId;
       socket.join(roomId);
 
-      const player = { ...socket.data.user, x: 768, y: 512 };
-      const snapshot = joinRoom(roomId, socket.id, player, {
-        name: room.name,
-        backgroundUrl: room.backgroundUrl,
-        maxCapacity: room.maxCapacity,
-      });
+      const { coins: _coins, ...playerFields } = socket.data.user;
+      const player = { ...playerFields, x: 768, y: 512 };
+      const selfProfile = socket.data.user.isGuest
+        ? null
+        : {
+            displayName: socket.data.user.displayName,
+            character: socket.data.user.character,
+            ownedCharacters: socket.data.user.ownedCharacters,
+            coins: socket.data.user.coins,
+          };
+      const snapshot = joinRoom(
+        roomId,
+        socket.id,
+        player,
+        {
+          name: room.name,
+          backgroundUrl: room.backgroundUrl,
+          maxCapacity: room.maxCapacity,
+        },
+        selfProfile,
+      );
 
       socket.emit("room:snapshot", snapshot);
       socket.to(roomId).emit("player:joined", { player });
@@ -280,6 +304,46 @@ export function registerSocketHandlers(io: AppServer) {
       if (timer) io.to(roomId).emit("timer:update", timer);
     });
 
+    socket.on("personalTimer:start", ({ mode }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      const timer = startPersonalTimer(roomId, socket.data.user.id, mode);
+      if (timer) socket.emit("personalTimer:update", timer);
+    });
+
+    socket.on("personalTimer:pause", () => {
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      const timer = pausePersonalTimer(roomId, socket.data.user.id);
+      if (timer) socket.emit("personalTimer:update", timer);
+    });
+
+    socket.on("personalTimer:reset", () => {
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      const timer = resetPersonalTimer(roomId, socket.data.user.id);
+      if (timer) socket.emit("personalTimer:update", timer);
+    });
+
+    socket.on("personalTimer:switchPhase", () => {
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      const timer = switchPersonalTimerPhase(roomId, socket.data.user.id);
+      if (timer) socket.emit("personalTimer:update", timer);
+    });
+
+    socket.on("personalTimer:configure", ({ workDurationMs, breakDurationMs }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      const timer = configurePersonalTimer(
+        roomId,
+        socket.data.user.id,
+        clampMs(workDurationMs, 25 * 60 * 1000),
+        clampMs(breakDurationMs, 5 * 60 * 1000),
+      );
+      if (timer) socket.emit("personalTimer:update", timer);
+    });
+
     socket.on("todo:add", ({ text, estimatedMinutes }) => {
       const roomId = socket.data.roomId;
       if (!roomId || !text?.trim()) return;
@@ -369,7 +433,7 @@ export function registerSocketHandlers(io: AppServer) {
       const end = sanitizeMinute(endMinute);
       const sanitizedDate = sanitizeDate(date);
       if (!roomId || !sanitizedDate || start === null || end === null || end <= start) return;
-      const items = addTimeBlock(roomId, socket.data.user.id, {
+      const items = addTimeBlock(roomId, socket.data.user.id, socket.data.user.displayName, {
         date: sanitizedDate,
         startMinute: start,
         endMinute: end,
@@ -384,6 +448,29 @@ export function registerSocketHandlers(io: AppServer) {
       if (!roomId || !id) return;
       const items = removeTimeBlock(roomId, socket.data.user.id, id);
       if (items) socket.emit("timeblock:update", { timeBlocks: items });
+    });
+
+    socket.on("sharedTimeblock:add", ({ date, startMinute, endMinute, label, tasks }) => {
+      const roomId = socket.data.roomId;
+      const start = sanitizeMinute(startMinute);
+      const end = sanitizeMinute(endMinute);
+      const sanitizedDate = sanitizeDate(date);
+      if (!roomId || !sanitizedDate || start === null || end === null || end <= start) return;
+      const items = addSharedTimeBlock(roomId, socket.data.user.displayName, {
+        date: sanitizedDate,
+        startMinute: start,
+        endMinute: end,
+        label: typeof label === "string" ? label.trim().slice(0, MAX_TIMEBLOCK_LABEL_LENGTH) : "",
+        tasks: sanitizeTasks(tasks),
+      });
+      if (items) io.to(roomId).emit("sharedTimeblock:update", { sharedTimeBlocks: items });
+    });
+
+    socket.on("sharedTimeblock:remove", ({ id }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId || !id) return;
+      const items = removeSharedTimeBlock(roomId, id);
+      if (items) io.to(roomId).emit("sharedTimeblock:update", { sharedTimeBlocks: items });
     });
 
     socket.on("disconnect", () => {
