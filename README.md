@@ -2,7 +2,8 @@
 
 A gamified, pixel-art social study space. Move a character around a shared 2D room, run a synced study timer with the people around you, and keep each other accountable — all in the browser.
 
-![Study XP preview](assets/readme-preview.png)
+<img width="1287" height="880" alt="image" src="https://github.com/user-attachments/assets/2ae4204c-36c6-4517-bba2-fe60aebba08b" />
+
 
 ## Features
 
