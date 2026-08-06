@@ -94,6 +94,7 @@ export interface ClientToServerEvents {
   "timer:reset": () => void;
   "timer:switchPhase": () => void;
   "timer:configure": (payload: { workDurationMs: number; breakDurationMs: number }) => void;
+  "timer:advancePhase": () => void;
   "todo:add": (payload: { text: string; estimatedMinutes: number | null }) => void;
   "todo:toggle": (payload: { id: string }) => void;
   "todo:remove": (payload: { id: string }) => void;
@@ -128,6 +129,7 @@ export interface ClientToServerEvents {
   "personalTimer:reset": () => void;
   "personalTimer:switchPhase": () => void;
   "personalTimer:configure": (payload: { workDurationMs: number; breakDurationMs: number }) => void;
+  "personalTimer:advancePhase": () => void;
 }
 
 export interface ServerToClientEvents {

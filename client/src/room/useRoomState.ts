@@ -179,6 +179,7 @@ export function useRoomState(roomId: string) {
   const pauseTimer = () => socket?.emit("timer:pause");
   const resetTimer = () => socket?.emit("timer:reset");
   const switchTimerPhase = () => socket?.emit("timer:switchPhase");
+  const advanceTimerPhase = () => socket?.emit("timer:advancePhase");
   const configureTimer = (workDurationMs: number, breakDurationMs: number) =>
     socket?.emit("timer:configure", { workDurationMs, breakDurationMs });
   const addTodo = (text: string, estimatedMinutes: number | null) =>
@@ -210,6 +211,7 @@ export function useRoomState(roomId: string) {
   const pausePersonalTimer = () => socket?.emit("personalTimer:pause");
   const resetPersonalTimer = () => socket?.emit("personalTimer:reset");
   const switchPersonalTimerPhase = () => socket?.emit("personalTimer:switchPhase");
+  const advancePersonalTimerPhase = () => socket?.emit("personalTimer:advancePhase");
   const configurePersonalTimer = (workDurationMs: number, breakDurationMs: number) =>
     socket?.emit("personalTimer:configure", { workDurationMs, breakDurationMs });
 
@@ -238,11 +240,13 @@ export function useRoomState(roomId: string) {
     pauseTimer,
     resetTimer,
     switchTimerPhase,
+    advanceTimerPhase,
     configureTimer,
     startPersonalTimer,
     pausePersonalTimer,
     resetPersonalTimer,
     switchPersonalTimerPhase,
+    advancePersonalTimerPhase,
     configurePersonalTimer,
     addTodo,
     toggleTodo,

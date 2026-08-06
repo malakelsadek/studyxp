@@ -4,7 +4,12 @@ import { computeElapsedMs, getActiveDurationMs } from "./timerMath";
 
 const POLL_INTERVAL_MS = 250;
 
-export function useTimerCompletionSound(timer: TimerState, onComplete: () => void) {
+export function useTimerCompletionSound(
+  timer: TimerState,
+  onComplete: () => void,
+  autoAdvance = false,
+  onAdvance?: () => void,
+) {
   const firedRef = useRef(false);
 
   useEffect(() => {
@@ -19,9 +24,10 @@ export function useTimerCompletionSound(timer: TimerState, onComplete: () => voi
       if (computeElapsedMs(timer) >= activeDurationMs) {
         firedRef.current = true;
         onComplete();
+        if (autoAdvance) onAdvance?.();
       }
     }, POLL_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [timer, onComplete]);
+  }, [timer, onComplete, autoAdvance, onAdvance]);
 }

@@ -236,6 +236,27 @@ export function switchTimerPhase(roomId: string): TimerState | null {
   return room.timer;
 }
 
+function isPhaseComplete(timer: TimerState): boolean {
+  if (timer.mode !== "pomodoro" || timer.status !== "running") return false;
+  const activeDurationMs = timer.phase === "work" ? timer.workDurationMs : timer.breakDurationMs;
+  return computeElapsed(timer) >= activeDurationMs;
+}
+
+// Switches phase and starts the next one running, in one step. Requires the current phase to
+// actually be complete, so duplicate requests from multiple viewers of a shared timer (each
+// polling client-side) can't skip an extra phase — the first request resets startedAt, so any
+// later duplicate sees an incomplete phase and is rejected.
+export function advanceTimerPhase(roomId: string): TimerState | null {
+  const room = rooms.get(roomId);
+  if (!room || !isPhaseComplete(room.timer)) return null;
+  const nextPhase = room.timer.phase === "work" ? "break" : "work";
+  room.timer = defaultTimer(room.timer.mode, room.timer.workDurationMs, room.timer.breakDurationMs);
+  room.timer.phase = nextPhase;
+  room.timer.status = "running";
+  room.timer.startedAt = Date.now();
+  return room.timer;
+}
+
 export function configureTimer(roomId: string, workDurationMs: number, breakDurationMs: number): TimerState | null {
   const room = rooms.get(roomId);
   if (!room || room.timer.status === "running") return null;
@@ -284,6 +305,19 @@ export function switchPersonalTimerPhase(roomId: string, ownerId: string): Timer
   const current = room.personalTimers.get(ownerId) ?? defaultTimer();
   const next = defaultTimer(current.mode, current.workDurationMs, current.breakDurationMs);
   next.phase = current.phase === "work" ? "break" : "work";
+  room.personalTimers.set(ownerId, next);
+  return next;
+}
+
+export function advancePersonalTimerPhase(roomId: string, ownerId: string): TimerState | null {
+  const room = rooms.get(roomId);
+  const current = room?.personalTimers.get(ownerId);
+  if (!room || !current || !isPhaseComplete(current)) return null;
+  const nextPhase = current.phase === "work" ? "break" : "work";
+  const next = defaultTimer(current.mode, current.workDurationMs, current.breakDurationMs);
+  next.phase = nextPhase;
+  next.status = "running";
+  next.startedAt = Date.now();
   room.personalTimers.set(ownerId, next);
   return next;
 }

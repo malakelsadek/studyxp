@@ -135,7 +135,8 @@
   font-family: "Courier New", monospace;
 }
 
-.mode-switch {
+.mode-switch,
+.toggle-switch {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -152,7 +153,8 @@
   font-weight: 600;
 }
 
-.mode-switch input {
+.mode-switch input,
+.toggle-switch input {
   position: absolute;
   opacity: 0;
   width: 0;
@@ -180,11 +182,13 @@
   transition: transform 0.2s, background 0.2s;
 }
 
-.mode-switch input:checked + .switch-slider {
+.mode-switch input:checked + .switch-slider,
+.toggle-switch input:checked + .switch-slider {
   background: #1e7e42;
 }
 
-.mode-switch input:checked + .switch-slider::before {
+.mode-switch input:checked + .switch-slider::before,
+.toggle-switch input:checked + .switch-slider::before {
   transform: translateX(16px);
   background: #4ade80;
 }
@@ -239,8 +243,21 @@
   gap: 8px;
 }
 
-.timer-durations {
-  text-align: center;
+.timer-controls-secondary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.timer-full-span {
+  grid-column: 1 / -1;
+}
+
+.timer-secondary-btn {
+  padding: 5px 8px !important;
+  font-size: 10px !important;
+  background: #1e1e2e !important;
+  color: #ccc !important;
 }
 
 .timer-durations-form {
@@ -272,8 +289,7 @@
   justify-content: center;
 }
 
-.timer-durations-actions button,
-.timer-durations > button {
+.timer-durations-actions button {
   padding: 6px 10px;
   background: #4ade80;
   color: #111;
@@ -286,6 +302,12 @@
   gap: 8px;
   font-size: 11px;
   color: #aaa;
+}
+
+.timer-auto-break {
+  justify-content: space-between;
+  margin: 8px 0;
+  color: #eee;
 }
 
 .timer-sound-picker select {
