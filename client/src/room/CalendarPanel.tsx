@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import type { TimeBlock, TodoItem } from "../socket/types";
+import { SharedPersonalToggle, type ViewMode } from "./SharedPersonalToggle";
 
 interface CalendarPanelProps {
   timeBlocks: TimeBlock[];
+  sharedTimeBlocks: TimeBlock[];
   personalTodos: TodoItem[];
   onAdd: (startMinute: number, endMinute: number, label: string, tasks: string[], date: string) => void;
   onRemove: (id: string) => void;
+  onSharedAdd: (startMinute: number, endMinute: number, label: string, tasks: string[], date: string) => void;
+  onSharedRemove: (id: string) => void;
 }
 
 const PX_PER_MINUTE = 1;
@@ -56,9 +60,18 @@ interface Draft {
   endMinute: number;
 }
 
-export function CalendarPanel({ timeBlocks, personalTodos, onAdd, onRemove }: CalendarPanelProps) {
+export function CalendarPanel({
+  timeBlocks,
+  sharedTimeBlocks,
+  personalTodos,
+  onAdd,
+  onRemove,
+  onSharedAdd,
+  onSharedRemove,
+}: CalendarPanelProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const dragOriginMinute = useRef<number | null>(null);
+  const [mode, setMode] = useState<ViewMode>("personal");
   const [dayOffset, setDayOffset] = useState(0);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [pending, setPending] = useState<Draft | null>(null);
@@ -69,11 +82,16 @@ export function CalendarPanel({ timeBlocks, personalTodos, onAdd, onRemove }: Ca
     return d.getHours() * 60 + d.getMinutes();
   });
 
+  const isShared = mode === "shared";
+  const activeBlocks = isShared ? sharedTimeBlocks : timeBlocks;
+  const activeAdd = isShared ? onSharedAdd : onAdd;
+  const activeRemove = isShared ? onSharedRemove : onRemove;
+
   const viewedDate = useMemo(() => addDays(new Date(), dayOffset), [dayOffset]);
   const viewedDateISO = useMemo(() => toISODate(viewedDate), [viewedDate]);
   const blocksForDay = useMemo(
-    () => timeBlocks.filter((b) => b.date === viewedDateISO),
-    [timeBlocks, viewedDateISO],
+    () => activeBlocks.filter((b) => b.date === viewedDateISO),
+    [activeBlocks, viewedDateISO],
   );
 
   useEffect(() => {
@@ -157,7 +175,7 @@ export function CalendarPanel({ timeBlocks, personalTodos, onAdd, onRemove }: Ca
 
   const confirmPending = () => {
     if (!pending) return;
-    onAdd(pending.startMinute, pending.endMinute, label.trim(), selectedTasks, viewedDateISO);
+    activeAdd(pending.startMinute, pending.endMinute, label.trim(), selectedTasks, viewedDateISO);
     setPending(null);
     setLabel("");
     setSelectedTasks([]);
@@ -173,6 +191,8 @@ export function CalendarPanel({ timeBlocks, personalTodos, onAdd, onRemove }: Ca
 
   return (
     <div className="calendar-panel">
+      <SharedPersonalToggle mode={mode} onChange={setMode} />
+
       <div className="calendar-day-nav">
         <button
           onClick={() => goToDay(dayOffset - 1)}
@@ -209,7 +229,7 @@ export function CalendarPanel({ timeBlocks, personalTodos, onAdd, onRemove }: Ca
                   {formatClock(block.startMinute)} – {formatClock(block.endMinute)}
                 </span>
                 <button
-                  onClick={() => onRemove(block.id)}
+                  onClick={() => activeRemove(block.id)}
                   aria-label="Remove block"
                   className="timeblock-bar-remove"
                 >
@@ -217,6 +237,7 @@ export function CalendarPanel({ timeBlocks, personalTodos, onAdd, onRemove }: Ca
                 </button>
               </div>
               {block.label && <div className="timeblock-bar-label">{block.label}</div>}
+              {isShared && <div className="timeblock-bar-author">{block.addedBy}</div>}
               {block.tasks.length > 0 && (
                 <div className="timeblock-bar-tasks">{block.tasks.join(", ")}</div>
               )}

@@ -642,20 +642,36 @@
 .room-settings-form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
+}
+
+.room-settings-row {
+  display: flex;
+  gap: 6px;
+}
+
+.room-settings-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.room-settings-row button {
+  flex-shrink: 0;
 }
 
 .room-settings-form input {
-  padding: 8px;
+  padding: 6px;
   background: #1e1e2e;
   color: #eee;
   font-family: "Courier New", monospace;
+  font-size: 12px;
 }
 
 .room-settings-form button {
-  padding: 8px 12px;
+  padding: 6px 10px;
   background: #4ade80;
   color: #111;
+  font-size: 12px;
 }
 
 .room-settings-form button:disabled {
@@ -665,14 +681,20 @@
 
 .room-settings-success {
   color: #4ade80;
-  font-size: 12px;
+  font-size: 11px;
   margin: 0;
+}
+
+.room-settings-form .profile-error,
+.room-settings-form .profile-muted {
+  margin: 0;
+  font-size: 11px;
 }
 
 .room-settings-divider {
   height: 3px;
   background: #0d0d14;
-  margin: 14px 0;
+  margin: 8px 0;
 }
 
 .room-settings-label {
@@ -830,6 +852,12 @@
   text-overflow: ellipsis;
 }
 
+.timeblock-bar-author {
+  margin-top: 2px;
+  font-size: 11px;
+  color: #888;
+}
+
 .timeblock-ghost {
   position: absolute;
   left: 52px;
@@ -940,6 +968,24 @@
 
 .music-embed-wrapper.spotify iframe {
   height: 152px;
+}
+
+.music-embed-blocked {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  text-align: center;
+  color: #ccc;
+  font-size: 12px;
+}
+
+.music-embed-blocked a {
+  color: #7ee787;
 }
 
 .music-form {

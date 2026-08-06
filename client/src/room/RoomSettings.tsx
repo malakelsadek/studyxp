@@ -124,23 +124,26 @@ export function RoomSettings({
     <div className="room-settings">
       <form className="room-settings-form" onSubmit={handleNameSubmit}>
         <label className="room-settings-label">Room name</label>
-        <input
-          type="text"
-          value={nameDraft}
-          onChange={(e) => setNameDraft(e.target.value)}
-          maxLength={50}
-          required
-        />
+        <div className="room-settings-row">
+          <input
+            type="text"
+            value={nameDraft}
+            onChange={(e) => setNameDraft(e.target.value)}
+            maxLength={50}
+            required
+          />
+          <button type="submit" disabled={nameStatus === "saving"}>
+            {nameStatus === "saving" ? "..." : "Save"}
+          </button>
+        </div>
         {nameError && <p className="profile-error">{nameError}</p>}
         {nameStatus === "done" && <p className="room-settings-success">Name updated.</p>}
-        <button type="submit" disabled={nameStatus === "saving"}>
-          {nameStatus === "saving" ? "Saving..." : "Save name"}
-        </button>
       </form>
 
       <div className="room-settings-divider" />
 
       <form className="room-settings-form" onSubmit={handleSubmit}>
+        <label className="room-settings-label">Room password</label>
         <input
           type="password"
           value={oldPassword}
@@ -148,38 +151,42 @@ export function RoomSettings({
           placeholder="Current password"
           required
         />
-        <input
-          type="password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          placeholder="New password"
-          minLength={4}
-          required
-        />
+        <div className="room-settings-row">
+          <input
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="New password"
+            minLength={4}
+            required
+          />
+          <button type="submit" disabled={status === "saving"}>
+            {status === "saving" ? "..." : "Save"}
+          </button>
+        </div>
         {error && <p className="profile-error">{error}</p>}
         {status === "done" && <p className="room-settings-success">Password updated.</p>}
-        <button type="submit" disabled={status === "saving"}>
-          {status === "saving" ? "Saving..." : "Change password"}
-        </button>
       </form>
 
       <div className="room-settings-divider" />
 
       <form className="room-settings-form" onSubmit={handleCapacitySubmit}>
         <label className="room-settings-label">Max people (up to {MAX_ROOM_CAPACITY})</label>
-        <input
-          type="number"
-          min={1}
-          max={MAX_ROOM_CAPACITY}
-          value={capacityDraft}
-          onChange={(e) => setCapacityDraft(Number(e.target.value))}
-          required
-        />
+        <div className="room-settings-row">
+          <input
+            type="number"
+            min={1}
+            max={MAX_ROOM_CAPACITY}
+            value={capacityDraft}
+            onChange={(e) => setCapacityDraft(Number(e.target.value))}
+            required
+          />
+          <button type="submit" disabled={capacityStatus === "saving"}>
+            {capacityStatus === "saving" ? "..." : "Save"}
+          </button>
+        </div>
         {capacityError && <p className="profile-error">{capacityError}</p>}
         {capacityStatus === "done" && <p className="room-settings-success">Capacity updated.</p>}
-        <button type="submit" disabled={capacityStatus === "saving"}>
-          {capacityStatus === "saving" ? "Saving..." : "Save capacity"}
-        </button>
       </form>
 
       <div className="room-settings-divider" />

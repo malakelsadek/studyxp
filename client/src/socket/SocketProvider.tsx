@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { io, type Socket } from "socket.io-client";
 import { useAuth } from "../auth/AuthContext";
 import type { ClientToServerEvents, ServerToClientEvents } from "./types";
@@ -21,20 +21,19 @@ const SocketContext = createContext<SocketContextValue>({
 
 export function SocketProvider({ children }: { children: ReactNode }) {
   const { token, user, logout } = useAuth();
+  const [socket, setSocket] = useState<AppSocket | null>(null);
   const [connected, setConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
-  const socket = useMemo<AppSocket | null>(() => {
-    if (!user) return null;
-    const auth = user.isGuest ? { guestName: user.displayName, character: user.character } : { token };
-    return io(SERVER_URL, { auth, autoConnect: true });
-    // Deliberately excludes user.character: later character changes are pushed live over
-    // "character:change" instead of reconnecting, which would otherwise drop the player from their room.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, token]);
-
   useEffect(() => {
-    if (!socket) return;
+    if (!user) {
+      setSocket(null);
+      setConnected(false);
+      return;
+    }
+
+    const auth = user.isGuest ? { guestName: user.displayName, character: user.character } : { token };
+    const nextSocket = io(SERVER_URL, { auth, autoConnect: true });
 
     const onConnect = () => {
       setConnected(true);
@@ -46,17 +45,23 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       if (err.message.includes("token")) logout();
     };
 
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
-    socket.on("connect_error", onConnectError);
+    nextSocket.on("connect", onConnect);
+    nextSocket.on("disconnect", onDisconnect);
+    nextSocket.on("connect_error", onConnectError);
+    setSocket(nextSocket);
 
     return () => {
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
-      socket.off("connect_error", onConnectError);
-      socket.disconnect();
+      nextSocket.off("connect", onConnect);
+      nextSocket.off("disconnect", onDisconnect);
+      nextSocket.off("connect_error", onConnectError);
+      nextSocket.disconnect();
+      setSocket(null);
+      setConnected(false);
     };
-  }, [socket, logout]);
+    // Deliberately excludes user.character: later character changes are pushed live over
+    // "character:change" instead of reconnecting, which would otherwise drop the player from their room.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, token, logout]);
 
   return (
     <SocketContext.Provider value={{ socket, connected, connectionError }}>

@@ -4,6 +4,7 @@ import type {
   PersonalTodoItem,
   PlayerDTO,
   RoomSnapshot,
+  SelfProfile,
   TimeBlock,
   TimerMode,
   TimerState,
@@ -22,12 +23,14 @@ interface Player extends PlayerDTO {
 interface RoomState {
   players: Map<string, Player>;
   timer: TimerState;
+  personalTimers: Map<string, TimerState>;
   messages: ChatMessage[];
   todos: TodoItem[];
   personalTodos: Map<string, PersonalTodoItem[]>;
   studyTimes: Map<string, { displayName: string; studyMs: number }>;
   taskCompletions: Map<string, { displayName: string; count: number }>;
   timeBlocks: Map<string, TimeBlock[]>;
+  sharedTimeBlocks: TimeBlock[];
   musicUrl: string | null;
 }
 
@@ -55,12 +58,14 @@ function getOrCreateRoom(roomId: string): RoomState {
     room = {
       players: new Map(),
       timer: defaultTimer(),
+      personalTimers: new Map(),
       messages: [],
       todos: [],
       personalTodos: new Map(),
       studyTimes: new Map(),
       taskCompletions: new Map(),
       timeBlocks: new Map(),
+      sharedTimeBlocks: [],
       musicUrl: null,
     };
     rooms.set(roomId, room);
@@ -98,28 +103,43 @@ function visiblePersonalTodos(room: RoomState, viewerId: string): Record<string,
   return result;
 }
 
-function toSnapshot(roomId: string, room: RoomState, selfId: string, dbMeta: RoomDbMeta): RoomSnapshot {
+function toSnapshot(
+  roomId: string,
+  room: RoomState,
+  selfId: string,
+  dbMeta: RoomDbMeta,
+  selfProfile: SelfProfile | null,
+): RoomSnapshot {
   return {
     roomId,
     selfId,
     players: Array.from(room.players.values()).map(({ socketId: _socketId, ...player }) => player),
     timer: room.timer,
+    personalTimer: room.personalTimers.get(selfId) ?? defaultTimer(),
     messages: room.messages,
     todos: room.todos,
     personalTodos: visiblePersonalTodos(room, selfId),
     leaderboard: toLeaderboard(room),
     timeBlocks: room.timeBlocks.get(selfId) ?? [],
+    sharedTimeBlocks: room.sharedTimeBlocks,
     musicUrl: room.musicUrl,
     name: dbMeta.name,
     backgroundUrl: dbMeta.backgroundUrl,
     maxCapacity: dbMeta.maxCapacity,
+    selfProfile,
   };
 }
 
-export function joinRoom(roomId: string, socketId: string, player: PlayerDTO, dbMeta: RoomDbMeta): RoomSnapshot {
+export function joinRoom(
+  roomId: string,
+  socketId: string,
+  player: PlayerDTO,
+  dbMeta: RoomDbMeta,
+  selfProfile: SelfProfile | null,
+): RoomSnapshot {
   const room = getOrCreateRoom(roomId);
   room.players.set(socketId, { ...player, socketId });
-  return toSnapshot(roomId, room, player.id, dbMeta);
+  return toSnapshot(roomId, room, player.id, dbMeta, selfProfile);
 }
 
 export function getPlayerCount(roomId: string): number {
@@ -223,6 +243,66 @@ export function configureTimer(roomId: string, workDurationMs: number, breakDura
   room.timer.breakDurationMs = breakDurationMs;
   room.timer.elapsedMsAtStart = 0;
   return room.timer;
+}
+
+export function startPersonalTimer(roomId: string, ownerId: string, mode: TimerMode): TimerState | null {
+  const room = rooms.get(roomId);
+  if (!room) return null;
+  const current = room.personalTimers.get(ownerId) ?? defaultTimer();
+  const next =
+    current.mode !== mode || current.status === "idle"
+      ? defaultTimer(mode, current.workDurationMs, current.breakDurationMs)
+      : current;
+  next.status = "running";
+  next.startedAt = Date.now();
+  room.personalTimers.set(ownerId, next);
+  return next;
+}
+
+export function pausePersonalTimer(roomId: string, ownerId: string): TimerState | null {
+  const room = rooms.get(roomId);
+  const timer = room?.personalTimers.get(ownerId);
+  if (!room || !timer) return null;
+  timer.elapsedMsAtStart = computeElapsed(timer);
+  timer.status = "paused";
+  timer.startedAt = null;
+  return timer;
+}
+
+export function resetPersonalTimer(roomId: string, ownerId: string): TimerState | null {
+  const room = rooms.get(roomId);
+  if (!room) return null;
+  const current = room.personalTimers.get(ownerId) ?? defaultTimer();
+  const next = defaultTimer(current.mode, current.workDurationMs, current.breakDurationMs);
+  room.personalTimers.set(ownerId, next);
+  return next;
+}
+
+export function switchPersonalTimerPhase(roomId: string, ownerId: string): TimerState | null {
+  const room = rooms.get(roomId);
+  if (!room) return null;
+  const current = room.personalTimers.get(ownerId) ?? defaultTimer();
+  const next = defaultTimer(current.mode, current.workDurationMs, current.breakDurationMs);
+  next.phase = current.phase === "work" ? "break" : "work";
+  room.personalTimers.set(ownerId, next);
+  return next;
+}
+
+export function configurePersonalTimer(
+  roomId: string,
+  ownerId: string,
+  workDurationMs: number,
+  breakDurationMs: number,
+): TimerState | null {
+  const room = rooms.get(roomId);
+  if (!room) return null;
+  const current = room.personalTimers.get(ownerId) ?? defaultTimer();
+  if (current.status === "running") return null;
+  current.workDurationMs = workDurationMs;
+  current.breakDurationMs = breakDurationMs;
+  current.elapsedMsAtStart = 0;
+  room.personalTimers.set(ownerId, current);
+  return current;
 }
 
 function nextOrder(items: { order: number }[]): number {
@@ -370,16 +450,21 @@ export function setMusicUrl(roomId: string, url: string | null): boolean {
   return true;
 }
 
+function sortTimeBlocks(items: TimeBlock[]): void {
+  items.sort((a, b) => (a.date === b.date ? a.startMinute - b.startMinute : a.date.localeCompare(b.date)));
+}
+
 export function addTimeBlock(
   roomId: string,
   ownerId: string,
+  addedBy: string,
   block: { date: string; startMinute: number; endMinute: number; label: string; tasks: string[] },
 ): TimeBlock[] | null {
   const room = rooms.get(roomId);
   if (!room) return null;
   const items = room.timeBlocks.get(ownerId) ?? [];
-  items.push({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, ...block });
-  items.sort((a, b) => (a.date === b.date ? a.startMinute - b.startMinute : a.date.localeCompare(b.date)));
+  items.push({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, ...block, addedBy });
+  sortTimeBlocks(items);
   room.timeBlocks.set(ownerId, items);
   return items;
 }
@@ -391,4 +476,23 @@ export function removeTimeBlock(roomId: string, ownerId: string, blockId: string
   const next = items.filter((b) => b.id !== blockId);
   room.timeBlocks.set(ownerId, next);
   return next;
+}
+
+export function addSharedTimeBlock(
+  roomId: string,
+  addedBy: string,
+  block: { date: string; startMinute: number; endMinute: number; label: string; tasks: string[] },
+): TimeBlock[] | null {
+  const room = rooms.get(roomId);
+  if (!room) return null;
+  room.sharedTimeBlocks.push({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, ...block, addedBy });
+  sortTimeBlocks(room.sharedTimeBlocks);
+  return room.sharedTimeBlocks;
+}
+
+export function removeSharedTimeBlock(roomId: string, blockId: string): TimeBlock[] | null {
+  const room = rooms.get(roomId);
+  if (!room) return null;
+  room.sharedTimeBlocks = room.sharedTimeBlocks.filter((b) => b.id !== blockId);
+  return room.sharedTimeBlocks;
 }
