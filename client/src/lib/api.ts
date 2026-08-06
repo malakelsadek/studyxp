@@ -84,6 +84,13 @@ async function getJson<T>(path: string): Promise<T> {
   return handleResponse<T>(res);
 }
 
+async function getAuthedJson<T>(path: string, token: string): Promise<T> {
+  const res = await fetch(`${SERVER_URL}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse<T>(res);
+}
+
 async function deleteJson<T>(path: string, body: unknown, token: string): Promise<T> {
   const res = await fetch(`${SERVER_URL}${path}`, {
     method: "DELETE",
@@ -165,4 +172,49 @@ export function changeRoomCapacity(token: string, roomId: string, maxCapacity: n
 
 export function changeRoomName(token: string, roomId: string, name: string) {
   return patchJson<{ name: string }>(`/rooms/${roomId}/name`, { name }, token);
+}
+
+export interface Friend {
+  id: string;
+  displayName: string;
+  character: string;
+}
+
+export interface FriendRequestEntry {
+  id: string;
+  createdAt: string;
+  user: Friend;
+}
+
+export type FriendStatus = "self" | "friends" | "outgoing" | "incoming" | "none";
+
+export function listFriends(token: string) {
+  return getAuthedJson<Friend[]>("/friends", token);
+}
+
+export function listFriendRequests(token: string) {
+  return getAuthedJson<{ incoming: FriendRequestEntry[]; outgoing: FriendRequestEntry[] }>(
+    "/friends/requests",
+    token,
+  );
+}
+
+export function sendFriendRequest(token: string, target: { receiverId?: string; email?: string }) {
+  return postJson<{ status: "pending" | "friends" }>("/friends/requests", target, token);
+}
+
+export function acceptFriendRequest(token: string, requestId: string) {
+  return postJson<{ status: "friends" }>(`/friends/requests/${requestId}/accept`, {}, token);
+}
+
+export function declineFriendRequest(token: string, requestId: string) {
+  return deleteJson<{ ok: true }>(`/friends/requests/${requestId}`, {}, token);
+}
+
+export function removeFriend(token: string, friendId: string) {
+  return deleteJson<{ ok: true }>(`/friends/${friendId}`, {}, token);
+}
+
+export function getFriendStatus(token: string, userId: string) {
+  return getAuthedJson<{ status: FriendStatus; requestId?: string }>(`/friends/status/${userId}`, token);
 }
