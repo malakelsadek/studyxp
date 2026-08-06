@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { listRooms, type RoomSummary } from "../lib/api";
 import { CharacterStore } from "./CharacterStore";
+import { FriendsSection } from "./FriendsSection";
 import { ProfileModal } from "../profile/ProfileModal";
 import "./Dashboard.css";
 
@@ -118,6 +119,11 @@ export function Dashboard() {
               })}
             </ul>
           )}
+        </section>
+
+        <section className="dashboard-section">
+          <h2>Friends</h2>
+          <FriendsSection />
         </section>
 
         <section className="dashboard-section">

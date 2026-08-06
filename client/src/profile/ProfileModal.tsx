@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-import { getProfile, updateProfile, type UserProfile } from "../lib/api";
+import {
+  acceptFriendRequest,
+  getFriendStatus,
+  getProfile,
+  removeFriend,
+  sendFriendRequest,
+  updateProfile,
+  type FriendStatus,
+  type UserProfile,
+} from "../lib/api";
 import { formatDurationLong } from "../room/timerMath";
 import { useAuth } from "../auth/AuthContext";
 import { ActivityHeatmap } from "./ActivityHeatmap";
@@ -31,6 +40,12 @@ export function ProfileModal({
   const [bioDraft, setBioDraft] = useState("");
   const [interestsDraft, setInterestsDraft] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [friendStatus, setFriendStatus] = useState<FriendStatus | null>(null);
+  const [friendRequestId, setFriendRequestId] = useState<string | null>(null);
+  const [friendActionPending, setFriendActionPending] = useState(false);
+  const [friendError, setFriendError] = useState<string | null>(null);
+
+  const isSelf = userId === currentUserId;
 
   useEffect(() => {
     if (isGuest) return;
@@ -55,7 +70,60 @@ export function ProfileModal({
     };
   }, [userId, isGuest]);
 
-  const isSelf = userId === currentUserId;
+  useEffect(() => {
+    if (isGuest || isSelf || !token) return;
+    let cancelled = false;
+    getFriendStatus(token, userId).then((res) => {
+      if (cancelled) return;
+      setFriendStatus(res.status);
+      setFriendRequestId(res.requestId ?? null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, isGuest, isSelf, token]);
+
+  const handleAddFriend = async () => {
+    if (!token) return;
+    setFriendActionPending(true);
+    setFriendError(null);
+    try {
+      const res = await sendFriendRequest(token, { receiverId: userId });
+      setFriendStatus(res.status === "friends" ? "friends" : "outgoing");
+    } catch (err) {
+      setFriendError(err instanceof Error ? err.message : "Failed to send request");
+    } finally {
+      setFriendActionPending(false);
+    }
+  };
+
+  const handleAcceptFriend = async () => {
+    if (!token || !friendRequestId) return;
+    setFriendActionPending(true);
+    setFriendError(null);
+    try {
+      await acceptFriendRequest(token, friendRequestId);
+      setFriendStatus("friends");
+    } catch (err) {
+      setFriendError(err instanceof Error ? err.message : "Failed to accept request");
+    } finally {
+      setFriendActionPending(false);
+    }
+  };
+
+  const handleRemoveFriend = async () => {
+    if (!token) return;
+    setFriendActionPending(true);
+    setFriendError(null);
+    try {
+      await removeFriend(token, userId);
+      setFriendStatus("none");
+    } catch (err) {
+      setFriendError(err instanceof Error ? err.message : "Failed to remove friend");
+    } finally {
+      setFriendActionPending(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!token || !displayNameDraft.trim()) return;
@@ -95,6 +163,33 @@ export function ProfileModal({
         ) : profile ? (
           <>
             <h2>{profile.displayName}</h2>
+
+            {!isSelf && token && (
+              <div className="friend-action">
+                {friendStatus === "none" && (
+                  <button onClick={handleAddFriend} disabled={friendActionPending}>
+                    {friendActionPending ? "..." : "Add Friend"}
+                  </button>
+                )}
+                {friendStatus === "outgoing" && (
+                  <span className="friend-pending">Friend request sent</span>
+                )}
+                {friendStatus === "incoming" && (
+                  <button onClick={handleAcceptFriend} disabled={friendActionPending}>
+                    {friendActionPending ? "..." : "Accept friend request"}
+                  </button>
+                )}
+                {friendStatus === "friends" && (
+                  <>
+                    <span className="friend-badge">✓ Friends</span>
+                    <button onClick={handleRemoveFriend} disabled={friendActionPending}>
+                      {friendActionPending ? "..." : "Remove"}
+                    </button>
+                  </>
+                )}
+                {friendError && <p className="profile-error">{friendError}</p>}
+              </div>
+            )}
 
             {editing ? (
               <>

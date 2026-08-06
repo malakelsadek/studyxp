@@ -7,6 +7,7 @@ import { authRouter } from "./auth/router.js";
 import { usersRouter } from "./users/router.js";
 import { statsRouter } from "./stats/router.js";
 import { roomsRouter } from "./rooms/router.js";
+import { friendsRouter } from "./friends/router.js";
 import { registerSocketHandlers } from "./socket/index.js";
 import type {
   ClientToServerEvents,
@@ -32,6 +33,7 @@ app.use("/auth", authRouter);
 app.use("/users", usersRouter);
 app.use("/stats", statsRouter);
 app.use("/rooms", roomsRouter);
+app.use("/friends", friendsRouter);
 
 const httpServer = createServer(app);
 const io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(

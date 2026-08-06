@@ -169,3 +169,90 @@
   background: #1e1e2e;
   color: #eee;
 }
+
+.friends-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.friend-add-form {
+  display: flex;
+  gap: 6px;
+}
+
+.friend-add-form input {
+  flex: 1;
+  padding: 8px 10px;
+  background: #1e1e2e;
+  color: #eee;
+  font-family: "Courier New", monospace;
+}
+
+.friend-add-form button {
+  padding: 8px 14px;
+  background: #4ade80;
+  color: #111;
+  flex-shrink: 0;
+}
+
+.friend-add-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.friend-requests h3 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  color: #888;
+  font-family: "Press Start 2P", "Courier New", monospace;
+}
+
+.friend-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.friend-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #2a2a3d;
+  border: 2px solid #0d0d14;
+  box-shadow: var(--pixel-shadow-sm);
+  padding: 8px 14px;
+}
+
+.friend-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.friend-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.friend-list-item button {
+  padding: 6px 10px;
+  background: #4ade80;
+  color: #111;
+  font-size: 11px;
+}
+
+.friend-list-item button:last-child {
+  background: #f87171;
+}
+
+.friend-pending {
+  color: #888;
+  font-size: 11px;
+}
