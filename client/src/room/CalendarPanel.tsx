@@ -1,15 +1,22 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
-import type { TimeBlock, TodoItem } from "../socket/types";
+import type { PersonalTodoItem, TimeBlock, TodoItem } from "../socket/types";
 import { SharedPersonalToggle, type ViewMode } from "./SharedPersonalToggle";
 
 interface CalendarPanelProps {
   timeBlocks: TimeBlock[];
   sharedTimeBlocks: TimeBlock[];
-  personalTodos: TodoItem[];
+  personalTodos: PersonalTodoItem[];
+  sharedTodos: TodoItem[];
   onAdd: (startMinute: number, endMinute: number, label: string, tasks: string[], date: string) => void;
   onRemove: (id: string) => void;
   onSharedAdd: (startMinute: number, endMinute: number, label: string, tasks: string[], date: string) => void;
   onSharedRemove: (id: string) => void;
+}
+
+interface PickableTask {
+  id: string;
+  text: string;
+  shared: boolean;
 }
 
 const PX_PER_MINUTE = 1;
@@ -64,6 +71,7 @@ export function CalendarPanel({
   timeBlocks,
   sharedTimeBlocks,
   personalTodos,
+  sharedTodos,
   onAdd,
   onRemove,
   onSharedAdd,
@@ -189,6 +197,14 @@ export function CalendarPanel({
 
   const visibleBlock = draft ?? pending;
 
+  const pickableTasks: PickableTask[] = useMemo(
+    () => [
+      ...personalTodos.filter((t) => !t.private).map((t) => ({ id: t.id, text: t.text, shared: false })),
+      ...sharedTodos.map((t) => ({ id: t.id, text: t.text, shared: true })),
+    ],
+    [personalTodos, sharedTodos],
+  );
+
   return (
     <div className="calendar-panel">
       <SharedPersonalToggle mode={mode} onChange={setMode} />
@@ -274,9 +290,9 @@ export function CalendarPanel({
             maxLength={100}
             autoFocus
           />
-          {personalTodos.length > 0 ? (
+          {pickableTasks.length > 0 ? (
             <div className="timeblock-task-picker">
-              {personalTodos.map((task) => (
+              {pickableTasks.map((task) => (
                 <label key={task.id} className="timeblock-task-option">
                   <input
                     type="checkbox"
@@ -284,11 +300,12 @@ export function CalendarPanel({
                     onChange={() => toggleTask(task.text)}
                   />
                   <span>{task.text}</span>
+                  {task.shared && <span className="timeblock-task-shared-tag">shared</span>}
                 </label>
               ))}
             </div>
           ) : (
-            <p className="calendar-hint">Add personal tasks in the To-do tile to link them to this block.</p>
+            <p className="calendar-hint">Add tasks in the To-do tile to link them to this block.</p>
           )}
           <div className="timeblock-form-actions">
             <button onClick={confirmPending}>Add block</button>

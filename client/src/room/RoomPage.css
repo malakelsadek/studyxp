@@ -322,8 +322,8 @@
   position: absolute;
   right: 16px;
   bottom: 16px;
-  width: 280px;
-  max-width: 40%;
+  width: 380px;
+  max-width: 50%;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -335,14 +335,16 @@
 .chat-overlay-messages {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  font-size: 13px;
+  gap: 4px;
+  font-size: 15px;
+  max-height: 340px;
+  overflow-y: auto;
 }
 
 .chat-overlay-message {
   background: rgba(0, 0, 0, 0.5);
   border: 2px solid rgba(255, 255, 255, 0.15);
-  padding: 4px 8px;
+  padding: 6px 10px;
   color: #fff;
   word-break: break-word;
 }
@@ -359,10 +361,11 @@
 .chat-overlay-input input {
   width: 100%;
   box-sizing: border-box;
-  padding: 8px 10px;
+  padding: 10px 12px;
   border: 2px solid rgba(255, 255, 255, 0.3) !important;
   background: rgba(0, 0, 0, 0.6);
   color: #fff;
+  font-size: 14px;
   font-family: "Courier New", monospace;
 }
 
@@ -995,6 +998,14 @@
   font-size: 11px;
   color: #ccc;
   cursor: pointer;
+}
+
+.timeblock-task-shared-tag {
+  font-size: 9px;
+  padding: 1px 5px;
+  background: #3a3a52;
+  color: #4ade80;
+  border: 1px solid #0d0d14;
 }
 
 .timeblock-form-actions {

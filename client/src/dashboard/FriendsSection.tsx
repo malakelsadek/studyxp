@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import {
   acceptFriendRequest,
@@ -11,9 +12,11 @@ import {
   type FriendRequestEntry,
 } from "../lib/api";
 import { CharacterPreview } from "../game/CharacterPreview";
+import { ProfileModal } from "../profile/ProfileModal";
 
 export function FriendsSection() {
-  const { token } = useAuth();
+  const { user, token } = useAuth();
+  const navigate = useNavigate();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [incoming, setIncoming] = useState<FriendRequestEntry[]>([]);
   const [outgoing, setOutgoing] = useState<FriendRequestEntry[]>([]);
@@ -21,6 +24,7 @@ export function FriendsSection() {
   const [emailDraft, setEmailDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewingFriend, setViewingFriend] = useState<Friend | null>(null);
 
   const refresh = (currentToken: string) => {
     Promise.all([listFriends(currentToken), listFriendRequests(currentToken)])
@@ -34,7 +38,10 @@ export function FriendsSection() {
   };
 
   useEffect(() => {
-    if (token) refresh(token);
+    if (!token) return;
+    refresh(token);
+    const interval = setInterval(() => refresh(token), 15000);
+    return () => clearInterval(interval);
   }, [token]);
 
   if (!token) {
@@ -114,12 +121,38 @@ export function FriendsSection() {
       ) : (
         <ul className="friend-list">
           {friends.map((f) => (
-            <li key={f.id} className="friend-list-item">
+            <li
+              key={f.id}
+              className="friend-list-item friend-list-item-clickable"
+              onClick={() => setViewingFriend(f)}
+            >
               <span className="friend-name">
-                <CharacterPreview characterId={f.character} size={32} />
+                <CharacterPreview characterId={f.character} size={56} />
                 {f.displayName}
+                <span className={`friend-status ${f.roomId ? "friend-status-in-room" : "friend-status-away"}`}>
+                  {f.roomId ? `In room: ${f.roomName}` : "Not in a room"}
+                </span>
               </span>
-              <button onClick={() => handleRemove(f.id)}>Remove</button>
+              <div className="friend-list-actions">
+                {f.roomId && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/room/${f.roomId}`);
+                    }}
+                  >
+                    Join
+                  </button>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemove(f.id);
+                  }}
+                >
+                  Remove
+                </button>
+              </div>
             </li>
           ))}
           {outgoing.map((r) => (
@@ -135,6 +168,17 @@ export function FriendsSection() {
             </li>
           ))}
         </ul>
+      )}
+
+      {viewingFriend && user && (
+        <ProfileModal
+          userId={viewingFriend.id}
+          isGuest={false}
+          fallbackDisplayName={viewingFriend.displayName}
+          currentUserId={user.id}
+          token={token}
+          onClose={() => setViewingFriend(null)}
+        />
       )}
     </div>
   );

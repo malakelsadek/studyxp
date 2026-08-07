@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../prisma.js";
 import { requireAuth } from "../auth/requireAuth.js";
+import { findUserRoomId } from "../socket/rooms.js";
 
 export const friendsRouter = Router();
 
@@ -34,7 +35,21 @@ friendsRouter.get("/", requireAuth, async (req, res) => {
     select: { friend: { select: FRIEND_SELECT } },
     orderBy: { createdAt: "desc" },
   });
-  res.json(friendships.map((f) => f.friend));
+
+  const roomIds = friendships.map((f) => findUserRoomId(f.friend.id));
+  const rooms = await prisma.room.findMany({
+    where: { id: { in: roomIds.filter((id): id is string => id !== null) } },
+    select: { id: true, name: true },
+  });
+  const roomNames = new Map(rooms.map((r) => [r.id, r.name]));
+
+  res.json(
+    friendships.map((f, i) => ({
+      ...f.friend,
+      roomId: roomIds[i],
+      roomName: roomIds[i] ? (roomNames.get(roomIds[i]!) ?? null) : null,
+    })),
+  );
 });
 
 friendsRouter.get("/requests", requireAuth, async (req, res) => {

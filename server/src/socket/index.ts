@@ -217,6 +217,15 @@ export function registerSocketHandlers(io: AppServer) {
       socket.to(roomId).emit("player:joined", { player });
     });
 
+    socket.on("room:leave", () => {
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      socket.leave(roomId);
+      socket.data.roomId = null;
+      const player = leaveRoom(roomId, socket.id);
+      if (player) socket.to(roomId).emit("player:left", { id: player.id });
+    });
+
     socket.on("room:background", ({ url }) => {
       const roomId = socket.data.roomId;
       if (!roomId || socket.data.user.email !== ROOM_SETTINGS_ADMIN_EMAIL) return;

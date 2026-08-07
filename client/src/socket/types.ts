@@ -88,6 +88,7 @@ export interface RoomSnapshot {
 
 export interface ClientToServerEvents {
   "room:join": (payload: { roomId: string; password?: string }) => void;
+  "room:leave": () => void;
   "player:move": (payload: { x: number; y: number }) => void;
   "chat:send": (payload: { text: string }) => void;
   "timer:start": (payload: { mode: TimerMode }) => void;

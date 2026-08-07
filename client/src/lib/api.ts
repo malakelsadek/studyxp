@@ -178,6 +178,8 @@ export interface Friend {
   id: string;
   displayName: string;
   character: string;
+  roomId: string | null;
+  roomName: string | null;
 }
 
 export interface FriendRequestEntry {

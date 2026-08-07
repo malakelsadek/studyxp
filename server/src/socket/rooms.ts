@@ -148,6 +148,15 @@ export function getPlayerCount(roomId: string): number {
   return rooms.get(roomId)?.players.size ?? 0;
 }
 
+export function findUserRoomId(userId: string): string | null {
+  for (const [roomId, room] of rooms) {
+    for (const player of room.players.values()) {
+      if (player.id === userId) return roomId;
+    }
+  }
+  return null;
+}
+
 export function leaveRoom(roomId: string, socketId: string): PlayerDTO | null {
   const room = rooms.get(roomId);
   if (!room) return null;
