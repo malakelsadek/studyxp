@@ -25,7 +25,7 @@ export function ChatOverlay({ messages, onSend, active }: ChatOverlayProps) {
   return (
     <div className="chat-overlay">
       <div className="chat-overlay-messages">
-        {messages.slice(-8).map((m) => (
+        {messages.slice(-16).map((m) => (
           <div key={m.id} className="chat-overlay-message">
             <span className="chat-from">{m.from}:</span> {m.text}
           </div>

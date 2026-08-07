@@ -136,6 +136,7 @@ export function RoomPage() {
     addSharedTimeBlock,
     removeSharedTimeBlock,
     setMusicUrl,
+    leaveRoom,
   } = useRoomState(roomId);
 
   const personalTimer = {
@@ -192,9 +193,9 @@ export function RoomPage() {
         </span>
         <div className="room-topbar-actions">
           <span className="room-topbar-coins">🪙 {user.coins}</span>
-          <button onClick={() => navigate("/dashboard")}>Home</button>
+          <button onClick={() => { leaveRoom(); navigate("/dashboard"); }}>Home</button>
           <button onClick={() => setShowLeaderboard((prev) => !prev)}>Leaderboard</button>
-          <button onClick={() => { logout(); navigate("/"); }}>Leave</button>
+          <button onClick={() => { logout(); navigate("/"); }}>Log out</button>
         </div>
       </div>
 
@@ -258,7 +259,7 @@ export function RoomPage() {
 
         {openPanels.people && (
           <Tile title="People" initialPosition={{ x: 880, y: 448 }} onClose={() => togglePanel("people")}>
-            <PeopleProgress players={players} personalTodos={personalTodos} selfId={selfId} />
+            <PeopleProgress players={players} personalTodos={personalTodos} todos={todos} selfId={selfId} />
           </Tile>
         )}
 
@@ -311,6 +312,7 @@ export function RoomPage() {
               timeBlocks={timeBlocks}
               sharedTimeBlocks={sharedTimeBlocks}
               personalTodos={selfId ? (personalTodos[selfId] ?? []) : []}
+              sharedTodos={todos}
               onAdd={addTimeBlock}
               onRemove={removeTimeBlock}
               onSharedAdd={addSharedTimeBlock}

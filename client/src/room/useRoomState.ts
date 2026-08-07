@@ -217,6 +217,10 @@ export function useRoomState(roomId: string) {
   const advancePersonalTimerPhase = () => socket?.emit("personalTimer:advancePhase");
   const configurePersonalTimer = (workDurationMs: number, breakDurationMs: number) =>
     socket?.emit("personalTimer:configure", { workDurationMs, breakDurationMs });
+  const leaveRoom = () => {
+    socket?.emit("room:leave");
+    joinedRoomId.current = null;
+  };
 
   return {
     connected,
@@ -270,5 +274,6 @@ export function useRoomState(roomId: string) {
     addSharedTimeBlock,
     removeSharedTimeBlock,
     setMusicUrl,
+    leaveRoom,
   };
 }
