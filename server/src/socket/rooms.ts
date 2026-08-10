@@ -31,7 +31,8 @@ interface RoomState {
   taskCompletions: Map<string, { displayName: string; count: number }>;
   timeBlocks: Map<string, TimeBlock[]>;
   sharedTimeBlocks: TimeBlock[];
-  musicUrl: string | null;
+  youtubeUrl: string | null;
+  spotifyUrl: string | null;
 }
 
 const rooms = new Map<string, RoomState>();
@@ -66,7 +67,8 @@ function getOrCreateRoom(roomId: string): RoomState {
       taskCompletions: new Map(),
       timeBlocks: new Map(),
       sharedTimeBlocks: [],
-      musicUrl: null,
+      youtubeUrl: null,
+      spotifyUrl: null,
     };
     rooms.set(roomId, room);
   }
@@ -123,7 +125,8 @@ function toSnapshot(
     leaderboard: toLeaderboard(room),
     timeBlocks: room.timeBlocks.get(selfId) ?? [],
     sharedTimeBlocks: room.sharedTimeBlocks,
-    musicUrl: room.musicUrl,
+    youtubeUrl: room.youtubeUrl,
+    spotifyUrl: room.spotifyUrl,
     name: dbMeta.name,
     backgroundUrl: dbMeta.backgroundUrl,
     maxCapacity: dbMeta.maxCapacity,
@@ -488,10 +491,14 @@ export function recordTaskCompletion(roomId: string, playerId: string, displayNa
   return toLeaderboard(room);
 }
 
-export function setMusicUrl(roomId: string, url: string | null): boolean {
+export function setMusicUrl(roomId: string, kind: "youtube" | "spotify", url: string | null): boolean {
   const room = rooms.get(roomId);
   if (!room) return false;
-  room.musicUrl = url;
+  if (kind === "youtube") {
+    room.youtubeUrl = url;
+  } else {
+    room.spotifyUrl = url;
+  }
   return true;
 }
 

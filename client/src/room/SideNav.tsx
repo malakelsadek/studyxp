@@ -1,4 +1,13 @@
-export type PanelKey = "settings" | "shortcuts" | "timer" | "todo" | "calendar" | "music" | "outfit" | "people";
+export type PanelKey =
+  | "settings"
+  | "shortcuts"
+  | "timer"
+  | "todo"
+  | "calendar"
+  | "youtube"
+  | "spotify"
+  | "outfit"
+  | "people";
 
 interface SideNavProps {
   openPanels: Record<PanelKey, boolean>;
@@ -44,9 +53,16 @@ export function SideNav({ openPanels, onToggle }: SideNavProps) {
         🗓️
       </button>
       <button
-        className={openPanels.music ? "active" : ""}
-        title="Music (Alt+M)"
-        onClick={() => onToggle("music")}
+        className={openPanels.youtube ? "active" : ""}
+        title="YouTube (Alt+Y)"
+        onClick={() => onToggle("youtube")}
+      >
+        📺
+      </button>
+      <button
+        className={openPanels.spotify ? "active" : ""}
+        title="Spotify (Alt+S)"
+        onClick={() => onToggle("spotify")}
       >
         🎵
       </button>

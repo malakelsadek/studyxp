@@ -26,7 +26,8 @@ export function useRoomState(roomId: string) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
   const [sharedTimeBlocks, setSharedTimeBlocks] = useState<TimeBlock[]>([]);
-  const [musicUrl, setMusicUrlState] = useState<string | null>(null);
+  const [youtubeUrl, setYoutubeUrlState] = useState<string | null>(null);
+  const [spotifyUrl, setSpotifyUrlState] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
   const [maxCapacity, setMaxCapacity] = useState(20);
@@ -66,7 +67,8 @@ export function useRoomState(roomId: string) {
       leaderboard: LeaderboardEntry[];
       timeBlocks: TimeBlock[];
       sharedTimeBlocks: TimeBlock[];
-      musicUrl: string | null;
+      youtubeUrl: string | null;
+      spotifyUrl: string | null;
       name: string;
       backgroundUrl: string | null;
       maxCapacity: number;
@@ -83,7 +85,8 @@ export function useRoomState(roomId: string) {
       setLeaderboard(snapshot.leaderboard);
       setTimeBlocks(snapshot.timeBlocks);
       setSharedTimeBlocks(snapshot.sharedTimeBlocks);
-      setMusicUrlState(snapshot.musicUrl);
+      setYoutubeUrlState(snapshot.youtubeUrl);
+      setSpotifyUrlState(snapshot.spotifyUrl);
       setName(snapshot.name);
       setBackgroundUrl(snapshot.backgroundUrl ? resolveAssetUrl(snapshot.backgroundUrl) : null);
       setMaxCapacity(snapshot.maxCapacity);
@@ -130,7 +133,13 @@ export function useRoomState(roomId: string) {
     const onSharedTimeBlockUpdate = ({ sharedTimeBlocks: next }: { sharedTimeBlocks: TimeBlock[] }) =>
       setSharedTimeBlocks(next);
     const onPersonalTimerUpdate = (next: TimerState) => setPersonalTimer(next);
-    const onMusicUpdate = ({ url }: { url: string | null }) => setMusicUrlState(url);
+    const onMusicUpdate = ({ kind, url }: { kind: "youtube" | "spotify"; url: string | null }) => {
+      if (kind === "youtube") {
+        setYoutubeUrlState(url);
+      } else {
+        setSpotifyUrlState(url);
+      }
+    };
     const onRoomError = ({ message }: { message: string }) => {
       joinedRoomId.current = null;
       setJoined(false);
@@ -209,7 +218,8 @@ export function useRoomState(roomId: string) {
     date: string,
   ) => socket?.emit("sharedTimeblock:add", { date, startMinute, endMinute, label, tasks });
   const removeSharedTimeBlock = (id: string) => socket?.emit("sharedTimeblock:remove", { id });
-  const setMusicUrl = (url: string | null) => socket?.emit("room:music", { url });
+  const setYoutubeUrl = (url: string | null) => socket?.emit("room:music", { kind: "youtube", url });
+  const setSpotifyUrl = (url: string | null) => socket?.emit("room:music", { kind: "spotify", url });
   const startPersonalTimer = (mode: TimerMode) => socket?.emit("personalTimer:start", { mode });
   const pausePersonalTimer = () => socket?.emit("personalTimer:pause");
   const resetPersonalTimer = () => socket?.emit("personalTimer:reset");
@@ -235,7 +245,8 @@ export function useRoomState(roomId: string) {
     leaderboard,
     timeBlocks,
     sharedTimeBlocks,
-    musicUrl,
+    youtubeUrl,
+    spotifyUrl,
     name,
     backgroundUrl,
     maxCapacity,
@@ -273,7 +284,8 @@ export function useRoomState(roomId: string) {
     removeTimeBlock,
     addSharedTimeBlock,
     removeSharedTimeBlock,
-    setMusicUrl,
+    setYoutubeUrl,
+    setSpotifyUrl,
     leaveRoom,
   };
 }

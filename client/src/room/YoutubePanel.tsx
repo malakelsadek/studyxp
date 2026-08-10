@@ -1,8 +1,8 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
 
-interface MusicPanelProps {
-  musicUrl: string | null;
-  onSetMusic: (url: string | null) => void;
+interface YoutubePanelProps {
+  url: string | null;
+  onSetUrl: (url: string | null) => void;
   canEdit: boolean;
 }
 
@@ -25,49 +25,25 @@ function youtubeEmbedUrl(videoId: string): string {
 }
 
 interface ParsedYoutubeEmbed {
-  kind: "youtube";
   embedUrl: string;
   videoId: string;
 }
 
-interface ParsedSpotifyEmbed {
-  kind: "spotify";
-  embedUrl: string;
-  // playlists and albums show a track list and need more vertical room than a single track/episode
-  expanded: boolean;
-}
-
-type ParsedEmbed = ParsedYoutubeEmbed | ParsedSpotifyEmbed;
-
-function parseMusicUrl(raw: string): ParsedEmbed | null {
+function parseYoutubeUrl(raw: string): ParsedYoutubeEmbed | null {
   const url = toUrl(raw.trim());
   if (!url) return null;
   const host = url.hostname.replace(/^www\.|^m\./, "");
 
   if (host === "youtube.com" || host === "music.youtube.com") {
     const videoId = url.searchParams.get("v");
-    if (videoId) return { kind: "youtube", embedUrl: youtubeEmbedUrl(videoId), videoId };
+    if (videoId) return { embedUrl: youtubeEmbedUrl(videoId), videoId };
     const pathMatch = /^\/(?:embed|shorts|live)\/([\w-]+)/.exec(url.pathname);
-    if (pathMatch) return { kind: "youtube", embedUrl: youtubeEmbedUrl(pathMatch[1]), videoId: pathMatch[1] };
+    if (pathMatch) return { embedUrl: youtubeEmbedUrl(pathMatch[1]), videoId: pathMatch[1] };
     return null;
   }
   if (host === "youtu.be") {
     const id = url.pathname.slice(1).split("/")[0];
-    return id ? { kind: "youtube", embedUrl: youtubeEmbedUrl(id), videoId: id } : null;
-  }
-  if (host === "open.spotify.com") {
-    // Spotify share links copied outside the US often carry a locale prefix, e.g. /intl-de/track/...
-    // Legacy playlist links look like /user/<username>/playlist/<id> instead.
-    const match =
-      /^\/(?:intl-[a-zA-Z]{2}\/)?(track|album|playlist|episode|show)\/([a-zA-Z0-9]+)/.exec(url.pathname) ??
-      /^\/user\/[^/]+\/(playlist)\/([a-zA-Z0-9]+)/.exec(url.pathname);
-    if (!match) return null;
-    const [, kind, id] = match;
-    return {
-      kind: "spotify",
-      embedUrl: `https://open.spotify.com/embed/${kind}/${id}?autoplay=1`,
-      expanded: kind === "album" || kind === "playlist",
-    };
+    return id ? { embedUrl: youtubeEmbedUrl(id), videoId: id } : null;
   }
   return null;
 }
@@ -153,7 +129,7 @@ function YoutubeEmbed({ embedUrl, videoId }: { embedUrl: string; videoId?: strin
       id={frameId}
       key={embedUrl}
       src={embedUrl}
-      title="Room music player"
+      title="Room YouTube player"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
       referrerPolicy="strict-origin-when-cross-origin"
       allowFullScreen
@@ -161,48 +137,32 @@ function YoutubeEmbed({ embedUrl, videoId }: { embedUrl: string; videoId?: strin
   );
 }
 
-export function MusicPanel({ musicUrl, onSetMusic, canEdit }: MusicPanelProps) {
+export function YoutubePanel({ url, onSetUrl, canEdit }: YoutubePanelProps) {
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const parsed = musicUrl ? parseMusicUrl(musicUrl) : null;
+  const parsed = url ? parseYoutubeUrl(url) : null;
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!draft.trim()) return;
-    const result = parseMusicUrl(draft.trim());
+    const result = parseYoutubeUrl(draft.trim());
     if (!result) {
-      setError("Paste a valid YouTube or Spotify link.");
+      setError("Paste a valid YouTube link.");
       return;
     }
     setError(null);
-    onSetMusic(draft.trim());
+    onSetUrl(draft.trim());
     setDraft("");
   };
-
-  const wrapperClass =
-    parsed?.kind === "spotify"
-      ? `music-embed-wrapper spotify${parsed.expanded ? " expanded" : ""}`
-      : "music-embed-wrapper youtube";
 
   return (
     <div className="music-panel">
       {parsed ? (
-        <div className={wrapperClass}>
-          {parsed.kind === "youtube" ? (
-            <YoutubeEmbed embedUrl={parsed.embedUrl} videoId={parsed.videoId} />
-          ) : (
-            <iframe
-              key={parsed.embedUrl}
-              src={parsed.embedUrl}
-              title="Room music player"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerPolicy="strict-origin-when-cross-origin"
-              allowFullScreen
-            />
-          )}
+        <div className="music-embed-wrapper youtube">
+          <YoutubeEmbed embedUrl={parsed.embedUrl} videoId={parsed.videoId} />
         </div>
       ) : (
-        <p className="profile-muted">No music playing.</p>
+        <p className="profile-muted">No video playing.</p>
       )}
 
       {canEdit ? (
@@ -210,17 +170,17 @@ export function MusicPanel({ musicUrl, onSetMusic, canEdit }: MusicPanelProps) {
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Paste a YouTube or Spotify link..."
+            placeholder="Paste a YouTube link..."
           />
           <button type="submit">Play</button>
         </form>
       ) : (
-        <p className="profile-muted">Sign up to change the room's music.</p>
+        <p className="profile-muted">Sign up to change the room's video.</p>
       )}
       {error && <p className="profile-error">{error}</p>}
-      {musicUrl && canEdit && (
-        <button type="button" className="music-clear" onClick={() => onSetMusic(null)}>
-          Stop music
+      {url && canEdit && (
+        <button type="button" className="music-clear" onClick={() => onSetUrl(null)}>
+          Stop video
         </button>
       )}
     </div>

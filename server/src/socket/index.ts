@@ -241,12 +241,13 @@ export function registerSocketHandlers(io: AppServer) {
       io.to(roomId).emit("room:name", { name: trimmed });
     });
 
-    socket.on("room:music", ({ url }) => {
+    socket.on("room:music", ({ kind, url }) => {
       const roomId = socket.data.roomId;
       if (!roomId || socket.data.user.isGuest) return;
+      if (kind !== "youtube" && kind !== "spotify") return;
       const sanitizedUrl = typeof url === "string" && url.trim() ? url.trim().slice(0, MAX_MUSIC_URL_LENGTH) : null;
-      if (!setMusicUrl(roomId, sanitizedUrl)) return;
-      io.to(roomId).emit("room:music", { url: sanitizedUrl });
+      if (!setMusicUrl(roomId, kind, sanitizedUrl)) return;
+      io.to(roomId).emit("room:music", { kind, url: sanitizedUrl });
     });
 
     socket.on("player:move", ({ x, y }) => {

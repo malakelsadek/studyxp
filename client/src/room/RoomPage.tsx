@@ -13,7 +13,8 @@ import { RoomSettings } from "./RoomSettings";
 import { LeaderboardPanel } from "./LeaderboardPanel";
 import { OutfitPanel } from "./OutfitPanel";
 import { CalendarPanel } from "./CalendarPanel";
-import { MusicPanel } from "./MusicPanel";
+import { YoutubePanel } from "./YoutubePanel";
+import { SpotifyPanel } from "./SpotifyPanel";
 import { CelebrationPopup } from "./CelebrationPopup";
 import { useTimerSoundPreference } from "./useTimerSoundPreference";
 import { useTimerAutoBreakPreference } from "./useTimerAutoBreakPreference";
@@ -35,7 +36,8 @@ export function RoomPage() {
     timer: false,
     todo: false,
     calendar: false,
-    music: false,
+    youtube: false,
+    spotify: false,
     outfit: false,
     people: false,
   });
@@ -74,9 +76,12 @@ export function RoomPage() {
       } else if (key === "p") {
         e.preventDefault();
         setOpenPanels((prev) => ({ ...prev, people: !prev.people }));
-      } else if (key === "m") {
+      } else if (key === "y") {
         e.preventDefault();
-        setOpenPanels((prev) => ({ ...prev, music: !prev.music }));
+        setOpenPanels((prev) => ({ ...prev, youtube: !prev.youtube }));
+      } else if (key === "s") {
+        e.preventDefault();
+        setOpenPanels((prev) => ({ ...prev, spotify: !prev.spotify }));
       }
     };
 
@@ -97,7 +102,8 @@ export function RoomPage() {
     leaderboard,
     timeBlocks,
     sharedTimeBlocks,
-    musicUrl,
+    youtubeUrl,
+    spotifyUrl,
     name,
     backgroundUrl,
     maxCapacity,
@@ -135,7 +141,8 @@ export function RoomPage() {
     removeTimeBlock,
     addSharedTimeBlock,
     removeSharedTimeBlock,
-    setMusicUrl,
+    setYoutubeUrl,
+    setSpotifyUrl,
     leaveRoom,
   } = useRoomState(roomId);
 
@@ -321,9 +328,15 @@ export function RoomPage() {
           </Tile>
         )}
 
-        {openPanels.music && (
-          <Tile title="Music" initialPosition={{ x: 860, y: 260 }} onClose={() => togglePanel("music")} width={320}>
-            <MusicPanel musicUrl={musicUrl} onSetMusic={setMusicUrl} canEdit={!user.isGuest} />
+        {openPanels.youtube && (
+          <Tile title="YouTube" initialPosition={{ x: 860, y: 260 }} onClose={() => togglePanel("youtube")} width={320}>
+            <YoutubePanel url={youtubeUrl} onSetUrl={setYoutubeUrl} canEdit={!user.isGuest} />
+          </Tile>
+        )}
+
+        {openPanels.spotify && (
+          <Tile title="Spotify" initialPosition={{ x: 860, y: 480 }} onClose={() => togglePanel("spotify")} width={320}>
+            <SpotifyPanel url={spotifyUrl} onSetUrl={setSpotifyUrl} canEdit={!user.isGuest} />
           </Tile>
         )}
 
