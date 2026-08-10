@@ -44,6 +44,12 @@ function parseSpotifyEmbed(raw: string): ParsedSpotifyEmbed | null {
   };
 }
 
+// Known limitations, both enforced by Spotify/the browser rather than fixable here:
+// - The embed only plays full tracks if the listener is logged into Spotify Premium in this
+//   browser; logged-out or Free-tier listeners always get a 30s preview per track.
+// - `autoplay=1` only works for whoever's browser directly triggers the URL change (their own
+//   click stays a "user gesture" the browser will honor); every other listener in the room sees
+//   the embed load paused and has to press its inline play button once themselves.
 export function SpotifyPanel({ url, onSetUrl, canEdit }: SpotifyPanelProps) {
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +97,8 @@ export function SpotifyPanel({ url, onSetUrl, canEdit }: SpotifyPanelProps) {
           </form>
           <p className="profile-muted spotify-hint">
             Playlists and albums only preview 30s per track unless you're logged into Spotify Premium in this
-            browser.
+            browser. Other people in the room may need to press play on the embed themselves — browsers only
+            autoplay audio for whoever set the link.
           </p>
         </>
       ) : (

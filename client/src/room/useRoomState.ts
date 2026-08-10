@@ -218,8 +218,17 @@ export function useRoomState(roomId: string) {
     date: string,
   ) => socket?.emit("sharedTimeblock:add", { date, startMinute, endMinute, label, tasks });
   const removeSharedTimeBlock = (id: string) => socket?.emit("sharedTimeblock:remove", { id });
-  const setYoutubeUrl = (url: string | null) => socket?.emit("room:music", { kind: "youtube", url });
-  const setSpotifyUrl = (url: string | null) => socket?.emit("room:music", { kind: "spotify", url });
+  const setYoutubeUrl = (url: string | null) => {
+    // Update local state synchronously (rather than waiting for the server's echo) so the
+    // click that sets the URL stays a direct, same-tick user gesture — otherwise the browser's
+    // autoplay policy blocks the embed since it no longer sees the iframe as gesture-triggered.
+    setYoutubeUrlState(url);
+    socket?.emit("room:music", { kind: "youtube", url });
+  };
+  const setSpotifyUrl = (url: string | null) => {
+    setSpotifyUrlState(url);
+    socket?.emit("room:music", { kind: "spotify", url });
+  };
   const startPersonalTimer = (mode: TimerMode) => socket?.emit("personalTimer:start", { mode });
   const pausePersonalTimer = () => socket?.emit("personalTimer:pause");
   const resetPersonalTimer = () => socket?.emit("personalTimer:reset");
