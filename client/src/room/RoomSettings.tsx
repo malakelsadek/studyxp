@@ -97,7 +97,7 @@ export function RoomSettings({
   if (!canEdit) {
     return <p className="profile-muted">Only mika can change room settings.</p>;
   }
-
+  
   const handleNameSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setNameStatus("saving");

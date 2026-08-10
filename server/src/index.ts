@@ -17,10 +17,14 @@ import type {
 } from "./socket/types.js";
 
 const PORT = Number(process.env.PORT ?? 4000);
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
+// comma-separated list, e.g. "http://localhost:5173,https://studyxp.vercel.app"
+const CLIENT_ORIGINS = (process.env.CLIENT_ORIGIN ?? "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 const app = express();
-app.use(cors({ origin: CLIENT_ORIGIN }));
+app.use(cors({ origin: CLIENT_ORIGINS }));
 app.use(express.json());
 
 app.get("/health", (_req, res) => {
@@ -38,7 +42,7 @@ app.use("/friends", friendsRouter);
 const httpServer = createServer(app);
 const io = new Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>(
   httpServer,
-  { cors: { origin: CLIENT_ORIGIN } },
+  { cors: { origin: CLIENT_ORIGINS } },
 );
 
 registerSocketHandlers(io);
