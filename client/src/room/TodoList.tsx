@@ -12,6 +12,10 @@ interface TodoListProps {
   showPrivateToggle?: boolean;
   assignablePlayers?: PlayerDTO[];
   onAssign?: (id: string, assigneeId: string | null) => void;
+  // Filters which todos render, without changing the drag-reorder id list below (which must
+  // stay derived from the full `todos` array — reordering only the filtered subset would
+  // reassign small 0..N indices that collide with the order values of hidden items).
+  isVisible?: (todo: TodoItem) => boolean;
 }
 
 function sumEstimate(items: TodoItem[]): number {
@@ -28,6 +32,7 @@ export function TodoList({
   showPrivateToggle,
   assignablePlayers,
   onAssign,
+  isVisible,
 }: TodoListProps) {
   const [text, setText] = useState("");
   const [estimateDraft, setEstimateDraft] = useState("");
@@ -67,13 +72,14 @@ export function TodoList({
     setDragId(null);
   };
 
-  const total = sumEstimate(todos);
-  const remaining = sumEstimate(todos.filter((t) => !t.done));
+  const visibleTodos = isVisible ? todos.filter(isVisible) : todos;
+  const total = sumEstimate(visibleTodos);
+  const remaining = sumEstimate(visibleTodos.filter((t) => !t.done));
 
   return (
     <div className="todo-list">
       <ul className="todo-items">
-        {todos.map((todo) => (
+        {visibleTodos.map((todo) => (
           <li
             key={todo.id}
             className={todo.done ? "done" : ""}

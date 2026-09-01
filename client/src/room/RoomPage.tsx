@@ -246,7 +246,7 @@ export function RoomPage() {
         )}
 
         {openPanels.todo && (
-          <Tile title="To-do" initialPosition={{ x: 880, y: 260 }} onClose={() => togglePanel("todo")}>
+          <Tile title="To-do" initialPosition={{ x: 880, y: 260 }} onClose={() => togglePanel("todo")} width={360}>
             <TodoTile
               onOpenPeople={() => togglePanel("people")}
               peopleOpen={openPanels.people}

@@ -392,6 +392,17 @@
   color: #111;
 }
 
+.todo-filter {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 6px;
+  font-size: 11px;
+  background: #1e1e2e;
+  color: #ccc;
+  border: 1px solid #333;
+  font-family: "Courier New", monospace;
+}
+
 .todo-list {
   display: flex;
   flex-direction: column;
@@ -407,6 +418,7 @@
   gap: 6px;
   max-height: 240px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .todo-items li {
@@ -415,6 +427,13 @@
   gap: 6px;
   font-size: 13px;
   cursor: grab;
+}
+
+.todo-items li label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .todo-drag-handle {
@@ -434,6 +453,7 @@
   align-items: center;
   gap: 6px;
   flex: 1;
+  min-width: 0;
   cursor: pointer;
 }
 
@@ -445,6 +465,11 @@
 .todo-author {
   font-size: 11px;
   color: #888;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .todo-assignee {
