@@ -53,6 +53,8 @@ export interface TodoItem {
   addedBy: string;
   estimatedMinutes: number | null;
   order: number;
+  assigneeId: string | null;
+  assigneeName: string | null;
 }
 
 export interface PersonalTodoItem extends TodoItem {
@@ -112,6 +114,7 @@ export interface ClientToServerEvents {
   "todo:toggle": (payload: { id: string }) => void;
   "todo:remove": (payload: { id: string }) => void;
   "todo:reorder": (payload: { orderedIds: string[] }) => void;
+  "todo:assign": (payload: { id: string; assigneeId: string | null }) => void;
   "personal:add": (payload: { text: string; estimatedMinutes: number | null; private: boolean }) => void;
   "personal:toggle": (payload: { id: string }) => void;
   "personal:remove": (payload: { id: string }) => void;

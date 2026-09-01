@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { PersonalTodoItem, TodoItem } from "../socket/types";
+import type { PersonalTodoItem, PlayerDTO, TodoItem } from "../socket/types";
 import { TodoList } from "./TodoList";
 
 type TodoTab = "shared" | "personal";
@@ -8,11 +8,13 @@ interface TodoTileProps {
   onOpenPeople: () => void;
   peopleOpen: boolean;
   selfId: string | null;
+  players: Record<string, PlayerDTO>;
   sharedTodos: TodoItem[];
   onSharedAdd: (text: string, estimatedMinutes: number | null) => void;
   onSharedToggle: (id: string) => void;
   onSharedRemove: (id: string) => void;
   onSharedReorder: (orderedIds: string[]) => void;
+  onSharedAssign: (id: string, assigneeId: string | null) => void;
   personalTodos: Record<string, PersonalTodoItem[]>;
   onPersonalAdd: (text: string, estimatedMinutes: number | null, isPrivate: boolean) => void;
   onPersonalToggle: (id: string) => void;
@@ -24,11 +26,13 @@ export function TodoTile({
   onOpenPeople,
   peopleOpen,
   selfId,
+  players,
   sharedTodos,
   onSharedAdd,
   onSharedToggle,
   onSharedRemove,
   onSharedReorder,
+  onSharedAssign,
   personalTodos,
   onPersonalAdd,
   onPersonalToggle,
@@ -60,6 +64,8 @@ export function TodoTile({
           onRemove={onSharedRemove}
           onReorder={onSharedReorder}
           showAuthor
+          assignablePlayers={Object.values(players)}
+          onAssign={onSharedAssign}
         />
       )}
 

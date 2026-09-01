@@ -372,7 +372,33 @@ export function addTodo(
     addedBy,
     estimatedMinutes,
     order: nextOrder(room.todos),
+    assigneeId: null,
+    assigneeName: null,
   });
+  return room.todos;
+}
+
+export function getPlayerDisplayName(roomId: string, userId: string): string | null {
+  const room = rooms.get(roomId);
+  if (!room) return null;
+  for (const player of room.players.values()) {
+    if (player.id === userId) return player.displayName;
+  }
+  return null;
+}
+
+export function assignTodo(
+  roomId: string,
+  todoId: string,
+  assigneeId: string | null,
+  assigneeName: string | null,
+): TodoItem[] | null {
+  const room = rooms.get(roomId);
+  if (!room) return null;
+  const todo = room.todos.find((t) => t.id === todoId);
+  if (!todo) return null;
+  todo.assigneeId = assigneeId;
+  todo.assigneeName = assigneeName;
   return room.todos;
 }
 
@@ -422,6 +448,8 @@ export function addPersonalTodo(
     estimatedMinutes,
     order: nextOrder(items),
     private: isPrivate,
+    assigneeId: null,
+    assigneeName: null,
   });
   room.personalTodos.set(ownerId, items);
   return items;

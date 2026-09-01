@@ -129,6 +129,7 @@ export function RoomPage() {
     toggleTodo,
     removeTodo,
     reorderTodos,
+    assignTodo,
     addPersonalTodo,
     togglePersonalTodo,
     removePersonalTodo,
@@ -250,11 +251,13 @@ export function RoomPage() {
               onOpenPeople={() => togglePanel("people")}
               peopleOpen={openPanels.people}
               selfId={selfId}
+              players={players}
               sharedTodos={todos}
               onSharedAdd={addTodo}
               onSharedToggle={toggleTodo}
               onSharedRemove={removeTodo}
               onSharedReorder={reorderTodos}
+              onSharedAssign={assignTodo}
               personalTodos={personalTodos}
               onPersonalAdd={addPersonalTodo}
               onPersonalToggle={togglePersonalTodo}

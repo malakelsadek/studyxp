@@ -1,5 +1,5 @@
 import { useState, type DragEvent, type FormEvent } from "react";
-import type { TodoItem } from "../socket/types";
+import type { PlayerDTO, TodoItem } from "../socket/types";
 import { formatDurationLong } from "./timerMath";
 
 interface TodoListProps {
@@ -10,6 +10,8 @@ interface TodoListProps {
   onReorder: (orderedIds: string[]) => void;
   showAuthor?: boolean;
   showPrivateToggle?: boolean;
+  assignablePlayers?: PlayerDTO[];
+  onAssign?: (id: string, assigneeId: string | null) => void;
 }
 
 function sumEstimate(items: TodoItem[]): number {
@@ -24,6 +26,8 @@ export function TodoList({
   onReorder,
   showAuthor,
   showPrivateToggle,
+  assignablePlayers,
+  onAssign,
 }: TodoListProps) {
   const [text, setText] = useState("");
   const [estimateDraft, setEstimateDraft] = useState("");
@@ -87,6 +91,24 @@ export function TodoList({
               <span className="todo-estimate">{formatDurationLong(todo.estimatedMinutes * 60000)}</span>
             )}
             {showAuthor && <span className="todo-author">{todo.addedBy}</span>}
+            {assignablePlayers && onAssign && (
+              <select
+                className="todo-assignee"
+                value={todo.assigneeId ?? ""}
+                onChange={(e) => onAssign(todo.id, e.target.value || null)}
+                aria-label="Assign to"
+              >
+                <option value="">Unassigned</option>
+                {todo.assigneeId && !assignablePlayers.some((p) => p.id === todo.assigneeId) && (
+                  <option value={todo.assigneeId}>{todo.assigneeName} (left)</option>
+                )}
+                {assignablePlayers.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.displayName}
+                  </option>
+                ))}
+              </select>
+            )}
             <button onClick={() => onRemove(todo.id)} aria-label="Remove">
               ×
             </button>

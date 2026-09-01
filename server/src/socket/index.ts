@@ -10,12 +10,14 @@ import {
   addSharedTimeBlock,
   addTimeBlock,
   addTodo,
+  assignTodo,
   advancePersonalTimerPhase,
   advanceTimerPhase,
   changeCharacter,
   configurePersonalTimer,
   configureTimer,
   getPlayerCount,
+  getPlayerDisplayName,
   joinRoom,
   leaveRoom,
   logStudyTime,
@@ -402,6 +404,18 @@ export function registerSocketHandlers(io: AppServer) {
       const roomId = socket.data.roomId;
       if (!roomId || !Array.isArray(orderedIds)) return;
       const todos = reorderTodos(roomId, orderedIds);
+      if (todos) io.to(roomId).emit("todo:update", { todos });
+    });
+
+    socket.on("todo:assign", ({ id, assigneeId }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      let assigneeName: string | null = null;
+      if (assigneeId) {
+        assigneeName = getPlayerDisplayName(roomId, assigneeId);
+        if (!assigneeName) return; // assignee isn't in the room (anymore); ignore
+      }
+      const todos = assignTodo(roomId, id, assigneeId ?? null, assigneeName);
       if (todos) io.to(roomId).emit("todo:update", { todos });
     });
 

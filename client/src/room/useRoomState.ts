@@ -199,6 +199,7 @@ export function useRoomState(roomId: string) {
   const toggleTodo = (id: string) => socket?.emit("todo:toggle", { id });
   const removeTodo = (id: string) => socket?.emit("todo:remove", { id });
   const reorderTodos = (orderedIds: string[]) => socket?.emit("todo:reorder", { orderedIds });
+  const assignTodo = (id: string, assigneeId: string | null) => socket?.emit("todo:assign", { id, assigneeId });
   const addPersonalTodo = (text: string, estimatedMinutes: number | null, isPrivate: boolean) =>
     socket?.emit("personal:add", { text, estimatedMinutes, private: isPrivate });
   const togglePersonalTodo = (id: string) => socket?.emit("personal:toggle", { id });
@@ -281,6 +282,7 @@ export function useRoomState(roomId: string) {
     toggleTodo,
     removeTodo,
     reorderTodos,
+    assignTodo,
     addPersonalTodo,
     togglePersonalTodo,
     removePersonalTodo,

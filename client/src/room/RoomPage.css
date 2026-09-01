@@ -447,6 +447,16 @@
   color: #888;
 }
 
+.todo-assignee {
+  font-size: 11px;
+  max-width: 84px;
+  background: #1e1e2e;
+  color: #ccc;
+  border: 1px solid #333;
+  font-family: "Courier New", monospace;
+  flex-shrink: 0;
+}
+
 .todo-items li button {
   background: none !important;
   border: none !important;
