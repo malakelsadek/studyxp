@@ -16,6 +16,8 @@ import {
   changeNameColor,
   configurePersonalTimer,
   configureTimer,
+  editPersonalTodo,
+  editTodo,
   getPlayerCount,
   getPlayerDisplayName,
   joinRoom,
@@ -413,15 +415,29 @@ export function registerSocketHandlers(io: AppServer) {
       if (timer) socket.emit("personalTimer:update", timer);
     });
 
-    socket.on("todo:add", ({ text, estimatedMinutes }) => {
+    socket.on("todo:add", ({ text, estimatedMinutes, assigneeId }) => {
       const roomId = socket.data.roomId;
       if (!roomId || !text?.trim()) return;
+      let assigneeName: string | null = null;
+      if (assigneeId) {
+        assigneeName = getPlayerDisplayName(roomId, assigneeId);
+        if (!assigneeName) return; // assignee isn't in the room (anymore); ignore
+      }
       const todos = addTodo(
         roomId,
         text.trim().slice(0, MAX_TODO_LENGTH),
         socket.data.user.displayName,
         sanitizeEstimate(estimatedMinutes),
+        assigneeId ?? null,
+        assigneeName,
       );
+      if (todos) io.to(roomId).emit("todo:update", { todos });
+    });
+
+    socket.on("todo:edit", ({ id, text, estimatedMinutes }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId || !text?.trim()) return;
+      const todos = editTodo(roomId, id, text.trim().slice(0, MAX_TODO_LENGTH), sanitizeEstimate(estimatedMinutes));
       if (todos) io.to(roomId).emit("todo:update", { todos });
     });
 
@@ -466,6 +482,20 @@ export function registerSocketHandlers(io: AppServer) {
       const items = addPersonalTodo(
         roomId,
         socket.data.user.id,
+        text.trim().slice(0, MAX_TODO_LENGTH),
+        sanitizeEstimate(estimatedMinutes),
+        Boolean(isPrivate),
+      );
+      if (items) broadcastPersonalUpdate(roomId, socket.data.user.id, items);
+    });
+
+    socket.on("personal:edit", ({ id, text, estimatedMinutes, private: isPrivate }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId || !text?.trim()) return;
+      const items = editPersonalTodo(
+        roomId,
+        socket.data.user.id,
+        id,
         text.trim().slice(0, MAX_TODO_LENGTH),
         sanitizeEstimate(estimatedMinutes),
         Boolean(isPrivate),

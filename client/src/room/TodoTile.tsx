@@ -10,13 +10,15 @@ interface TodoTileProps {
   selfId: string | null;
   players: Record<string, PlayerDTO>;
   sharedTodos: TodoItem[];
-  onSharedAdd: (text: string, estimatedMinutes: number | null) => void;
+  onSharedAdd: (text: string, estimatedMinutes: number | null, assigneeId?: string | null) => void;
+  onSharedEdit: (id: string, text: string, estimatedMinutes: number | null) => void;
   onSharedToggle: (id: string) => void;
   onSharedRemove: (id: string) => void;
   onSharedReorder: (orderedIds: string[]) => void;
   onSharedAssign: (id: string, assigneeId: string | null) => void;
   personalTodos: Record<string, PersonalTodoItem[]>;
   onPersonalAdd: (text: string, estimatedMinutes: number | null, isPrivate: boolean) => void;
+  onPersonalEdit: (id: string, text: string, estimatedMinutes: number | null, isPrivate: boolean) => void;
   onPersonalToggle: (id: string) => void;
   onPersonalRemove: (id: string) => void;
   onPersonalReorder: (orderedIds: string[]) => void;
@@ -31,12 +33,14 @@ export function TodoTile({
   players,
   sharedTodos,
   onSharedAdd,
+  onSharedEdit,
   onSharedToggle,
   onSharedRemove,
   onSharedReorder,
   onSharedAssign,
   personalTodos,
   onPersonalAdd,
+  onPersonalEdit,
   onPersonalToggle,
   onPersonalRemove,
   onPersonalReorder,
@@ -71,20 +75,35 @@ export function TodoTile({
 
   return (
     <div>
-      <div className="todo-tabs">
-        <button className={tab === "shared" ? "active" : ""} onClick={() => setTab("shared")}>
-          Shared
-        </button>
-        <button className={tab === "personal" ? "active" : ""} onClick={() => setTab("personal")}>
-          Personal
-        </button>
-        <button className={peopleOpen ? "active" : ""} onClick={onOpenPeople} title="People (Alt+P)">
-          People
-        </button>
-      </div>
+      <div className="todo-toolbar">
+        <div className="todo-tabs">
+          <button
+            className={tab === "shared" ? "active" : ""}
+            onClick={() => setTab("shared")}
+            title="Shared tasks"
+            aria-label="Shared tasks"
+          >
+            📋
+          </button>
+          <button
+            className={tab === "personal" ? "active" : ""}
+            onClick={() => setTab("personal")}
+            title="Personal tasks"
+            aria-label="Personal tasks"
+          >
+            👤
+          </button>
+          <button
+            className={peopleOpen ? "active" : ""}
+            onClick={onOpenPeople}
+            title="People progress (Alt+P)"
+            aria-label="People progress"
+          >
+            👥
+          </button>
+        </div>
 
-      {tab === "shared" && (
-        <>
+        {tab === "shared" && (
           <select
             className="todo-filter"
             value={filterId}
@@ -99,24 +118,29 @@ export function TodoTile({
               </option>
             ))}
           </select>
-          <TodoList
-            todos={sharedTodos}
-            onAdd={(text, estimatedMinutes) => onSharedAdd(text, estimatedMinutes)}
-            onToggle={onSharedToggle}
-            onRemove={onSharedRemove}
-            onReorder={onSharedReorder}
-            showAuthor
-            assignablePlayers={assignablePlayers}
-            onAssign={onSharedAssign}
-            isVisible={isTodoVisible}
-          />
-        </>
+        )}
+      </div>
+
+      {tab === "shared" && (
+        <TodoList
+          todos={sharedTodos}
+          onAdd={(text, estimatedMinutes, _isPrivate, assigneeId) => onSharedAdd(text, estimatedMinutes, assigneeId)}
+          onEdit={(id, text, estimatedMinutes) => onSharedEdit(id, text, estimatedMinutes)}
+          onToggle={onSharedToggle}
+          onRemove={onSharedRemove}
+          onReorder={onSharedReorder}
+          showAuthor
+          assignablePlayers={assignablePlayers}
+          onAssign={onSharedAssign}
+          isVisible={isTodoVisible}
+        />
       )}
 
       {tab === "personal" && (
         <TodoList
           todos={ownPersonalTodos}
           onAdd={onPersonalAdd}
+          onEdit={(id, text, estimatedMinutes, isPrivate) => onPersonalEdit(id, text, estimatedMinutes, isPrivate)}
           onToggle={onPersonalToggle}
           onRemove={onPersonalRemove}
           onReorder={onPersonalReorder}

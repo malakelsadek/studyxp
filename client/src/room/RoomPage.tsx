@@ -155,11 +155,13 @@ export function RoomPage() {
     advancePersonalTimerPhase,
     configurePersonalTimer,
     addTodo,
+    editTodo,
     toggleTodo,
     removeTodo,
     reorderTodos,
     assignTodo,
     addPersonalTodo,
+    editPersonalTodo,
     togglePersonalTodo,
     removePersonalTodo,
     reorderPersonalTodos,
@@ -264,7 +266,16 @@ export function RoomPage() {
         )}
 
         {openPanels.timer && (
-          <Tile title="Timer" initialPosition={{ x: 880, y: 72 }} onClose={() => togglePanel("timer")}>
+          <Tile
+            title="Timer"
+            initialPosition={{ x: 880, y: 72 }}
+            onClose={() => togglePanel("timer")}
+            resizable
+            minWidth={240}
+            maxWidth={520}
+            minHeight={200}
+            maxHeight={640}
+          >
             <TimerTile
               shared={{
                 timer,
@@ -284,7 +295,17 @@ export function RoomPage() {
         )}
 
         {openPanels.todo && (
-          <Tile title="To-do" initialPosition={{ x: 880, y: 260 }} onClose={() => togglePanel("todo")} width={360}>
+          <Tile
+            title="To-do"
+            initialPosition={{ x: 880, y: 260 }}
+            onClose={() => togglePanel("todo")}
+            width={360}
+            resizable
+            minWidth={300}
+            maxWidth={640}
+            minHeight={240}
+            maxHeight={800}
+          >
             <TodoTile
               onOpenPeople={() => togglePanel("people")}
               peopleOpen={openPanels.people}
@@ -292,12 +313,14 @@ export function RoomPage() {
               players={players}
               sharedTodos={todos}
               onSharedAdd={addTodo}
+              onSharedEdit={editTodo}
               onSharedToggle={toggleTodo}
               onSharedRemove={removeTodo}
               onSharedReorder={reorderTodos}
               onSharedAssign={assignTodo}
               personalTodos={personalTodos}
               onPersonalAdd={addPersonalTodo}
+              onPersonalEdit={editPersonalTodo}
               onPersonalToggle={togglePersonalTodo}
               onPersonalRemove={removePersonalTodo}
               onPersonalReorder={reorderPersonalTodos}
@@ -359,6 +382,11 @@ export function RoomPage() {
             initialPosition={{ x: 860, y: 72 }}
             onClose={() => togglePanel("calendar")}
             width={340}
+            resizable
+            minWidth={300}
+            maxWidth={640}
+            minHeight={320}
+            maxHeight={800}
           >
             <CalendarPanel
               timeBlocks={timeBlocks}
@@ -380,6 +408,7 @@ export function RoomPage() {
             onClose={() => togglePanel("youtube")}
             width={320}
             resizable
+            resizeAxis="width"
             minWidth={240}
             maxWidth={720}
           >
@@ -388,7 +417,17 @@ export function RoomPage() {
         )}
 
         {openPanels.spotify && (
-          <Tile title="Spotify" initialPosition={{ x: 860, y: 480 }} onClose={() => togglePanel("spotify")} width={320}>
+          <Tile
+            title="Spotify"
+            initialPosition={{ x: 860, y: 480 }}
+            onClose={() => togglePanel("spotify")}
+            width={320}
+            resizable
+            minWidth={240}
+            maxWidth={640}
+            minHeight={180}
+            maxHeight={500}
+          >
             <SpotifyPanel url={spotifyUrl} onSetUrl={setSpotifyUrl} canEdit={!user.isGuest} />
           </Tile>
         )}

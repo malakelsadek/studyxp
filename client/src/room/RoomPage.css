@@ -117,6 +117,7 @@
   font-size: 11px;
   cursor: move;
   user-select: none;
+  flex-shrink: 0;
 }
 
 .tile-header button {
@@ -133,6 +134,28 @@
 .tile-body {
   padding: 14px;
   font-family: "Courier New", monospace;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.tile-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tile-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tile-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+}
+
+.tile-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.45);
 }
 
 .tile-resize-handle {
@@ -447,18 +470,27 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
+.todo-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
 .todo-tabs {
   display: flex;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .todo-tabs button {
-  flex: 1;
-  padding: 6px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
   background: #1e1e2e;
   color: #aaa;
-  font-size: 9px;
+  font-size: 14px;
+  line-height: 1;
 }
 
 .todo-tabs button.active {
@@ -467,10 +499,10 @@
 }
 
 .todo-filter {
-  width: 100%;
-  margin-bottom: 8px;
-  padding: 6px;
-  font-size: 11px;
+  flex: 1;
+  min-width: 0;
+  padding: 3px 5px;
+  font-size: 10px;
   background: #1e1e2e;
   color: #ccc;
   border: 1px solid #333;
@@ -480,7 +512,7 @@
 .todo-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .todo-items {
@@ -489,55 +521,102 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   max-height: 240px;
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
-.todo-items li {
+.todo-items::-webkit-scrollbar {
+  width: 6px;
+}
+
+.todo-items::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.todo-items::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+}
+
+.todo-items::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.todo-item {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px 6px;
+  background: #1e1e2e;
+  border: 1px solid #0d0d14;
+  font-size: 12px;
   cursor: grab;
 }
 
-.todo-items li label span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
+.todo-item-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.todo-item-main input[type="checkbox"] {
+  margin-top: 2px;
+  flex-shrink: 0;
 }
 
 .todo-drag-handle {
   color: #666;
-  font-size: 12px;
+  font-size: 11px;
   flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.todo-item-text {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  color: #eee;
+  word-break: break-word;
+  cursor: pointer;
+}
+
+.todo-item.done .todo-item-text {
+  text-decoration: line-through;
+  color: #888;
+}
+
+.todo-item-main button {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #f87171;
+  font-size: 15px;
+  cursor: pointer;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.todo-item-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 22px;
+  flex-wrap: wrap;
 }
 
 .todo-estimate {
   font-size: 10px;
   color: #4ade80;
   white-space: nowrap;
-}
-
-.todo-items li label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: 1;
-  min-width: 0;
-  cursor: pointer;
-}
-
-.todo-items li.done span {
-  text-decoration: line-through;
-  color: #888;
+  flex-shrink: 0;
 }
 
 .todo-author {
-  font-size: 11px;
+  font-size: 10px;
   color: #888;
   max-width: 60px;
   overflow: hidden;
@@ -547,23 +626,13 @@
 }
 
 .todo-assignee {
-  font-size: 11px;
+  font-size: 10px;
   max-width: 84px;
-  background: #1e1e2e;
+  background: #26263a;
   color: #ccc;
   border: 1px solid #333;
   font-family: "Courier New", monospace;
   flex-shrink: 0;
-}
-
-.todo-items li button {
-  background: none !important;
-  border: none !important;
-  box-shadow: none !important;
-  color: #f87171;
-  font-size: 16px;
-  cursor: pointer;
-  line-height: 1;
 }
 
 .todo-total {
@@ -572,31 +641,83 @@
   text-align: center;
 }
 
-.todo-input {
-  display: flex;
-  gap: 6px;
+.todo-add-trigger {
+  padding: 5px 8px;
+  font-size: 11px;
+  background: #4ade80;
+  color: #111;
+  align-self: flex-start;
 }
 
-.todo-input input {
-  flex: 1;
-  min-width: 0;
+.todo-add-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.todo-add-modal {
+  background: #2a2a3d;
+  color: #eee;
+  border: 3px solid #0d0d14;
+  padding: 20px;
+  width: 300px;
+  max-width: 90vw;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.6);
+  font-family: "Courier New", monospace;
+}
+
+.todo-add-modal h3 {
+  margin: 0 0 14px;
+  font-family: "Press Start 2P", "Courier New", monospace;
+  font-size: 13px;
+}
+
+.todo-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.todo-add-form input[type="text"],
+.todo-add-form > input {
   padding: 8px;
   background: #1e1e2e;
   color: #eee;
   font-family: "Courier New", monospace;
 }
 
-.todo-input button {
-  flex-shrink: 0;
+.todo-add-estimate-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #aaa;
 }
 
-.todo-estimate-input {
-  flex: none !important;
-  width: 46px;
+.todo-add-estimate-label input,
+.todo-add-estimate-label select {
+  padding: 8px;
+  background: #1e1e2e;
+  color: #eee;
+  border: 1px solid #333;
+  font-family: "Courier New", monospace;
 }
 
-.todo-input button {
-  padding: 8px 12px;
+.todo-add-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.todo-add-form-actions button {
+  flex: 1;
+  padding: 8px;
+}
+
+.todo-add-form-actions button[type="submit"] {
   background: #4ade80;
   color: #111;
 }
@@ -607,7 +728,6 @@
   gap: 6px;
   font-size: 11px;
   color: #aaa;
-  margin-top: 6px;
   cursor: pointer;
 }
 
@@ -1019,6 +1139,25 @@
   border: 2px solid #0d0d14;
   cursor: crosshair;
   user-select: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.calendar-track::-webkit-scrollbar {
+  width: 6px;
+}
+
+.calendar-track::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.calendar-track::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 3px;
+}
+
+.calendar-track::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.45);
 }
 
 .calendar-track-inner {

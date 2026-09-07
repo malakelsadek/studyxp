@@ -220,14 +220,18 @@ export function useRoomState(roomId: string) {
   const advanceTimerPhase = () => socket?.emit("timer:advancePhase");
   const configureTimer = (workDurationMs: number, breakDurationMs: number) =>
     socket?.emit("timer:configure", { workDurationMs, breakDurationMs });
-  const addTodo = (text: string, estimatedMinutes: number | null) =>
-    socket?.emit("todo:add", { text, estimatedMinutes });
+  const addTodo = (text: string, estimatedMinutes: number | null, assigneeId?: string | null) =>
+    socket?.emit("todo:add", { text, estimatedMinutes, assigneeId });
+  const editTodo = (id: string, text: string, estimatedMinutes: number | null) =>
+    socket?.emit("todo:edit", { id, text, estimatedMinutes });
   const toggleTodo = (id: string) => socket?.emit("todo:toggle", { id });
   const removeTodo = (id: string) => socket?.emit("todo:remove", { id });
   const reorderTodos = (orderedIds: string[]) => socket?.emit("todo:reorder", { orderedIds });
   const assignTodo = (id: string, assigneeId: string | null) => socket?.emit("todo:assign", { id, assigneeId });
   const addPersonalTodo = (text: string, estimatedMinutes: number | null, isPrivate: boolean) =>
     socket?.emit("personal:add", { text, estimatedMinutes, private: isPrivate });
+  const editPersonalTodo = (id: string, text: string, estimatedMinutes: number | null, isPrivate: boolean) =>
+    socket?.emit("personal:edit", { id, text, estimatedMinutes, private: isPrivate });
   const togglePersonalTodo = (id: string) => socket?.emit("personal:toggle", { id });
   const removePersonalTodo = (id: string) => socket?.emit("personal:remove", { id });
   const reorderPersonalTodos = (orderedIds: string[]) => socket?.emit("personal:reorder", { orderedIds });
@@ -310,11 +314,13 @@ export function useRoomState(roomId: string) {
     advancePersonalTimerPhase,
     configurePersonalTimer,
     addTodo,
+    editTodo,
     toggleTodo,
     removeTodo,
     reorderTodos,
     assignTodo,
     addPersonalTodo,
+    editPersonalTodo,
     togglePersonalTodo,
     removePersonalTodo,
     reorderPersonalTodos,

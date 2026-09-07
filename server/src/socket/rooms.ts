@@ -392,6 +392,8 @@ export function addTodo(
   text: string,
   addedBy: string,
   estimatedMinutes: number | null,
+  assigneeId: string | null = null,
+  assigneeName: string | null = null,
 ): TodoItem[] | null {
   const room = rooms.get(roomId);
   if (!room) return null;
@@ -402,9 +404,24 @@ export function addTodo(
     addedBy,
     estimatedMinutes,
     order: nextOrder(room.todos),
-    assigneeId: null,
-    assigneeName: null,
+    assigneeId,
+    assigneeName,
   });
+  return room.todos;
+}
+
+export function editTodo(
+  roomId: string,
+  todoId: string,
+  text: string,
+  estimatedMinutes: number | null,
+): TodoItem[] | null {
+  const room = rooms.get(roomId);
+  if (!room) return null;
+  const todo = room.todos.find((t) => t.id === todoId);
+  if (!todo) return null;
+  todo.text = text.slice(0, MAX_TODO_TEXT_LENGTH);
+  todo.estimatedMinutes = estimatedMinutes;
   return room.todos;
 }
 
@@ -482,6 +499,25 @@ export function addPersonalTodo(
     assigneeName: null,
   });
   room.personalTodos.set(ownerId, items);
+  return items;
+}
+
+export function editPersonalTodo(
+  roomId: string,
+  ownerId: string,
+  todoId: string,
+  text: string,
+  estimatedMinutes: number | null,
+  isPrivate: boolean,
+): PersonalTodoItem[] | null {
+  const room = rooms.get(roomId);
+  const items = room?.personalTodos.get(ownerId);
+  if (!room || !items) return null;
+  const todo = items.find((t) => t.id === todoId);
+  if (!todo) return null;
+  todo.text = text.slice(0, MAX_TODO_TEXT_LENGTH);
+  todo.estimatedMinutes = estimatedMinutes;
+  todo.private = isPrivate;
   return items;
 }
 

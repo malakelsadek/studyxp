@@ -117,12 +117,19 @@ export interface ClientToServerEvents {
   "timer:switchPhase": () => void;
   "timer:configure": (payload: { workDurationMs: number; breakDurationMs: number }) => void;
   "timer:advancePhase": () => void;
-  "todo:add": (payload: { text: string; estimatedMinutes: number | null }) => void;
+  "todo:add": (payload: { text: string; estimatedMinutes: number | null; assigneeId?: string | null }) => void;
+  "todo:edit": (payload: { id: string; text: string; estimatedMinutes: number | null }) => void;
   "todo:toggle": (payload: { id: string }) => void;
   "todo:remove": (payload: { id: string }) => void;
   "todo:reorder": (payload: { orderedIds: string[] }) => void;
   "todo:assign": (payload: { id: string; assigneeId: string | null }) => void;
   "personal:add": (payload: { text: string; estimatedMinutes: number | null; private: boolean }) => void;
+  "personal:edit": (payload: {
+    id: string;
+    text: string;
+    estimatedMinutes: number | null;
+    private: boolean;
+  }) => void;
   "personal:toggle": (payload: { id: string }) => void;
   "personal:remove": (payload: { id: string }) => void;
   "personal:reorder": (payload: { orderedIds: string[] }) => void;

@@ -7,8 +7,11 @@ interface TileProps {
   children: ReactNode;
   width?: number;
   resizable?: boolean;
+  resizeAxis?: "width" | "both";
   minWidth?: number;
   maxWidth?: number;
+  minHeight?: number;
+  maxHeight?: number;
 }
 
 export function Tile({
@@ -18,15 +21,24 @@ export function Tile({
   children,
   width,
   resizable = false,
+  resizeAxis = "both",
   minWidth = 220,
   maxWidth = 640,
+  minHeight = 160,
+  maxHeight = 720,
 }: TileProps) {
   const [position, setPosition] = useState(initialPosition);
-  const [tileWidth, setTileWidth] = useState(width ?? 280);
+  const [size, setSize] = useState<{ width: number; height: number | undefined }>({
+    width: width ?? 280,
+    height: undefined,
+  });
+  const tileRef = useRef<HTMLDivElement>(null);
   const dragState = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(
     null,
   );
-  const resizeState = useRef<{ startX: number; startWidth: number } | null>(null);
+  const resizeState = useRef<{ startX: number; startY: number; startWidth: number; startHeight: number } | null>(
+    null,
+  );
 
   const handleMouseDown = (e: ReactMouseEvent) => {
     dragState.current = {
@@ -55,13 +67,20 @@ export function Tile({
 
   const handleResizeMouseDown = (e: ReactMouseEvent) => {
     e.stopPropagation();
-    resizeState.current = { startX: e.clientX, startWidth: tileWidth };
+    const startHeight = size.height ?? tileRef.current?.getBoundingClientRect().height ?? minHeight;
+    resizeState.current = { startX: e.clientX, startY: e.clientY, startWidth: size.width, startHeight };
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!resizeState.current) return;
       const dx = moveEvent.clientX - resizeState.current.startX;
-      const next = Math.min(maxWidth, Math.max(minWidth, resizeState.current.startWidth + dx));
-      setTileWidth(next);
+      const nextWidth = Math.min(maxWidth, Math.max(minWidth, resizeState.current.startWidth + dx));
+      if (resizeAxis === "width") {
+        setSize({ width: nextWidth, height: undefined });
+        return;
+      }
+      const dy = moveEvent.clientY - resizeState.current.startY;
+      const nextHeight = Math.min(maxHeight, Math.max(minHeight, resizeState.current.startHeight + dy));
+      setSize({ width: nextWidth, height: nextHeight });
     };
 
     const handleMouseUp = () => {
@@ -75,7 +94,16 @@ export function Tile({
   };
 
   return (
-    <div className="tile" style={{ left: position.x, top: position.y, width: resizable ? tileWidth : width }}>
+    <div
+      ref={tileRef}
+      className="tile"
+      style={{
+        left: position.x,
+        top: position.y,
+        width: resizable ? size.width : width,
+        height: resizable ? size.height : undefined,
+      }}
+    >
       <div className="tile-header" onMouseDown={handleMouseDown}>
         <span>{title}</span>
         <button onClick={onClose} aria-label={`Close ${title}`}>
