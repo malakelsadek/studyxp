@@ -135,6 +135,27 @@
   font-family: "Courier New", monospace;
 }
 
+.tile-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    transparent 40%,
+    #0d0d14 40%,
+    #0d0d14 50%,
+    transparent 50%,
+    transparent 65%,
+    #0d0d14 65%,
+    #0d0d14 75%,
+    transparent 75%
+  );
+}
+
 .mode-switch,
 .toggle-switch {
   display: flex;

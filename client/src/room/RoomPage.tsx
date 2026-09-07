@@ -374,7 +374,15 @@ export function RoomPage() {
         )}
 
         {openPanels.youtube && (
-          <Tile title="YouTube" initialPosition={{ x: 860, y: 260 }} onClose={() => togglePanel("youtube")} width={320}>
+          <Tile
+            title="YouTube"
+            initialPosition={{ x: 860, y: 260 }}
+            onClose={() => togglePanel("youtube")}
+            width={320}
+            resizable
+            minWidth={240}
+            maxWidth={720}
+          >
             <YoutubePanel url={youtubeUrl} onSetUrl={setYoutubeUrl} canEdit={!user.isGuest} />
           </Tile>
         )}
