@@ -2,6 +2,10 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { ChatMessage } from "../socket/types";
 import { colorForUser } from "../lib/userColor";
 
+function formatTime(at: number): string {
+  return new Date(at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
 interface ChatOverlayProps {
   messages: ChatMessage[];
   onSend: (text: string) => void;
@@ -45,6 +49,7 @@ export function ChatOverlay({ messages, onSend, active, showMessages, onToggleMe
           ) : (
             messages.map((m) => (
               <p key={m.id} className="chat-overlay-message">
+                <span className="chat-time">{formatTime(m.at)}</span>{" "}
                 <span className="chat-from" style={{ color: m.nameColor ?? colorForUser(m.fromId) }}>
                   {m.from}:
                 </span>{" "}

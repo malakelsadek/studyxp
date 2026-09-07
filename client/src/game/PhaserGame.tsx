@@ -113,6 +113,9 @@ export const PhaserGame = forwardRef<PhaserGameHandle, PhaserGameProps>(function
     for (const message of messages) {
       if (seenMessageIds.current.has(message.id)) continue;
       seenMessageIds.current.add(message.id);
+      // The sender already saw their own bubble instantly via showLocalChatBubble; showing
+      // it again here (once the server echo arrives) would stack a duplicate on top of it.
+      if (message.fromId === selfRef.current.selfId) continue;
       sceneRef.current?.showChatBubble(message.fromId, message.text);
     }
   }, [messages]);
