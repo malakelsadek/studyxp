@@ -268,6 +268,47 @@
   font-size: 11px;
 }
 
+.friend-join-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.friend-join-modal {
+  background: #2a2a3d;
+  color: #eee;
+  border: 3px solid #0d0d14;
+  padding: 24px;
+  width: 280px;
+  max-width: 90vw;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.6);
+  font-family: "Courier New", monospace;
+  text-align: center;
+}
+
+.friend-join-modal h3 {
+  margin: 0 0 16px;
+  font-family: "Press Start 2P", "Courier New", monospace;
+  font-size: 13px;
+}
+
+.friend-join-modal .room-join-form {
+  flex-direction: column;
+}
+
+.friend-join-modal .room-join-form input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.friend-join-modal .room-join-form button {
+  padding: 8px 10px;
+}
+
 .friend-status {
   font-size: 10px;
   padding: 2px 6px;

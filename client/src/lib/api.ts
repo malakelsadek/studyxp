@@ -45,6 +45,9 @@ export interface RoomSummary {
   maxCapacity: number;
   currentCount: number;
   hasPassword: boolean;
+  creatorId: string | null;
+  allowNameChangeByMembers: boolean;
+  allowBackgroundChangeByMembers: boolean;
 }
 
 export const MAX_ROOM_CAPACITY = 20;
@@ -174,12 +177,25 @@ export function changeRoomName(token: string, roomId: string, name: string) {
   return patchJson<{ name: string }>(`/rooms/${roomId}/name`, { name }, token);
 }
 
+export function changeRoomPermissions(
+  token: string,
+  roomId: string,
+  updates: { allowNameChangeByMembers?: boolean; allowBackgroundChangeByMembers?: boolean },
+) {
+  return patchJson<{ allowNameChangeByMembers: boolean; allowBackgroundChangeByMembers: boolean }>(
+    `/rooms/${roomId}/permissions`,
+    updates,
+    token,
+  );
+}
+
 export interface Friend {
   id: string;
   displayName: string;
   character: string;
   roomId: string | null;
   roomName: string | null;
+  hasPassword: boolean;
 }
 
 export interface FriendRequestEntry {

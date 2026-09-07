@@ -3,7 +3,6 @@ import bcrypt from "bcryptjs";
 import type { Server, Socket } from "socket.io";
 import { prisma } from "../prisma.js";
 import { verifyToken } from "../auth/jwt.js";
-import { ROOM_SETTINGS_ADMIN_EMAIL } from "../auth/requireRoomAdmin.js";
 import {
   addChatMessage,
   addPersonalTodo,
@@ -211,6 +210,9 @@ export function registerSocketHandlers(io: AppServer) {
           backgroundUrl: room.backgroundUrl,
           maxCapacity: room.maxCapacity,
           hasPassword: room.passwordHash !== null,
+          creatorId: room.creatorId,
+          allowNameChangeByMembers: room.allowNameChangeByMembers,
+          allowBackgroundChangeByMembers: room.allowBackgroundChangeByMembers,
         },
         selfProfile,
       );
@@ -228,19 +230,37 @@ export function registerSocketHandlers(io: AppServer) {
       if (player) socket.to(roomId).emit("player:left", { id: player.id });
     });
 
-    socket.on("room:background", ({ url }) => {
+    async function canEditRoom(roomId: string, userId: string, kind: "name" | "background"): Promise<boolean> {
+      const room = await prisma.room.findUnique({
+        where: { id: roomId },
+        select: { creatorId: true, allowNameChangeByMembers: true, allowBackgroundChangeByMembers: true },
+      });
+      if (!room) return false;
+      if (room.creatorId === userId) return true;
+      return kind === "name" ? room.allowNameChangeByMembers : room.allowBackgroundChangeByMembers;
+    }
+
+    socket.on("room:background", async ({ url }) => {
       const roomId = socket.data.roomId;
-      if (!roomId || socket.data.user.email !== ROOM_SETTINGS_ADMIN_EMAIL) return;
+      if (!roomId || !(await canEditRoom(roomId, socket.data.user.id, "background"))) return;
       if (url !== null && !url.startsWith("/uploads/rooms/")) return;
       io.to(roomId).emit("room:background", { url });
     });
 
-    socket.on("room:name", ({ name }) => {
+    socket.on("room:name", async ({ name }) => {
       const roomId = socket.data.roomId;
-      if (!roomId || socket.data.user.email !== ROOM_SETTINGS_ADMIN_EMAIL) return;
+      if (!roomId || !(await canEditRoom(roomId, socket.data.user.id, "name"))) return;
       const trimmed = name?.trim().slice(0, 50);
       if (!trimmed) return;
       io.to(roomId).emit("room:name", { name: trimmed });
+    });
+
+    socket.on("room:permissions", async ({ allowNameChangeByMembers, allowBackgroundChangeByMembers }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      const room = await prisma.room.findUnique({ where: { id: roomId }, select: { creatorId: true } });
+      if (!room || room.creatorId !== socket.data.user.id) return;
+      io.to(roomId).emit("room:permissions", { allowNameChangeByMembers, allowBackgroundChangeByMembers });
     });
 
     socket.on("room:music", ({ kind, url }) => {

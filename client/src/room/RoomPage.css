@@ -757,6 +757,33 @@
   color: #aaa;
 }
 
+.room-settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #eee;
+  cursor: pointer;
+}
+
+.room-settings-toggle input {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.room-settings-link {
+  align-self: flex-start;
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+  color: #4ade80;
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .room-settings-form input[type="file"] {
   padding: 6px 0;
   border: none !important;

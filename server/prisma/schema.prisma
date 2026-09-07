@@ -25,6 +25,7 @@ model User {
   receivedFriendRequests FriendRequest[] @relation("ReceivedFriendRequests")
   friendshipsAsUser      Friendship[]    @relation("FriendshipsAsUser")
   friendshipsAsFriend    Friendship[]    @relation("FriendshipsAsFriend")
+  createdRooms           Room[]          @relation("RoomCreator")
 }
 
 model FriendRequest {
@@ -50,12 +51,16 @@ model Friendship {
 }
 
 model Room {
-  id            String   @id
-  name          String
-  passwordHash  String?
-  backgroundUrl String?
-  maxCapacity   Int      @default(20)
-  createdAt     DateTime @default(now())
+  id                             String   @id
+  name                           String
+  passwordHash                   String?
+  backgroundUrl                  String?
+  maxCapacity                    Int      @default(20)
+  createdAt                      DateTime @default(now())
+  creatorId                      String?
+  creator                        User?    @relation("RoomCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+  allowNameChangeByMembers       Boolean  @default(false)
+  allowBackgroundChangeByMembers Boolean  @default(false)
 }
 
 model StudySession {

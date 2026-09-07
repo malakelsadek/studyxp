@@ -86,6 +86,9 @@ export interface RoomSnapshot {
   backgroundUrl: string | null;
   maxCapacity: number;
   hasPassword: boolean;
+  creatorId: string | null;
+  allowNameChangeByMembers: boolean;
+  allowBackgroundChangeByMembers: boolean;
   selfProfile: SelfProfile | null;
 }
 
@@ -111,6 +114,10 @@ export interface ClientToServerEvents {
   "personal:reorder": (payload: { orderedIds: string[] }) => void;
   "room:background": (payload: { url: string | null }) => void;
   "room:name": (payload: { name: string }) => void;
+  "room:permissions": (payload: {
+    allowNameChangeByMembers: boolean;
+    allowBackgroundChangeByMembers: boolean;
+  }) => void;
   "room:music": (payload: { kind: "youtube" | "spotify"; url: string | null }) => void;
   "study:log": (payload: { durationMs: number }) => void;
   "character:change": (payload: { character: string }) => void;
@@ -149,6 +156,10 @@ export interface ServerToClientEvents {
   "personal:update": (payload: { ownerId: string; todos: PersonalTodoItem[] }) => void;
   "room:background": (payload: { url: string | null }) => void;
   "room:name": (payload: { name: string }) => void;
+  "room:permissions": (payload: {
+    allowNameChangeByMembers: boolean;
+    allowBackgroundChangeByMembers: boolean;
+  }) => void;
   "room:music": (payload: { kind: "youtube" | "spotify"; url: string | null }) => void;
   "leaderboard:update": (payload: { leaderboard: LeaderboardEntry[] }) => void;
   "player:character": (payload: { id: string; character: string }) => void;

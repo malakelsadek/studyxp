@@ -96,6 +96,9 @@ export interface RoomDbMeta {
   backgroundUrl: string | null;
   maxCapacity: number;
   hasPassword: boolean;
+  creatorId: string | null;
+  allowNameChangeByMembers: boolean;
+  allowBackgroundChangeByMembers: boolean;
 }
 
 function visiblePersonalTodos(room: RoomState, viewerId: string): Record<string, PersonalTodoItem[]> {
@@ -131,6 +134,9 @@ function toSnapshot(
     backgroundUrl: dbMeta.backgroundUrl,
     maxCapacity: dbMeta.maxCapacity,
     hasPassword: dbMeta.hasPassword,
+    creatorId: dbMeta.creatorId,
+    allowNameChangeByMembers: dbMeta.allowNameChangeByMembers,
+    allowBackgroundChangeByMembers: dbMeta.allowBackgroundChangeByMembers,
     selfProfile,
   };
 }
@@ -143,6 +149,15 @@ export function joinRoom(
   selfProfile: SelfProfile | null,
 ): RoomSnapshot {
   const room = getOrCreateRoom(roomId);
+  // A reconnect (or a second tab) joins with a new socket id before the old socket's
+  // disconnect fires. Drop any stale entry for the same user now, so that when the old
+  // socket's disconnect eventually arrives, leaveRoom finds nothing and doesn't broadcast
+  // a spurious player:left for a user who is actually still present.
+  for (const [existingSocketId, existingPlayer] of room.players) {
+    if (existingPlayer.id === player.id && existingSocketId !== socketId) {
+      room.players.delete(existingSocketId);
+    }
+  }
   room.players.set(socketId, { ...player, socketId });
   return toSnapshot(roomId, room, player.id, dbMeta, selfProfile);
 }

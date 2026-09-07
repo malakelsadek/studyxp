@@ -2,7 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "../prisma.js";
-import { requireRoomAdmin } from "../auth/requireRoomAdmin.js";
+import { requireRoomCreator, requireRoomEditPermission } from "../auth/requireRoomAdmin.js";
 import { getPlayerCount } from "../socket/rooms.js";
 import { deleteUploadedFile, uploadRoomBackground } from "./upload.js";
 
@@ -12,7 +12,15 @@ const MAX_ROOM_CAPACITY = 20;
 
 roomsRouter.get("/", async (_req, res) => {
   const rooms = await prisma.room.findMany({
-    select: { id: true, name: true, maxCapacity: true, passwordHash: true },
+    select: {
+      id: true,
+      name: true,
+      maxCapacity: true,
+      passwordHash: true,
+      creatorId: true,
+      allowNameChangeByMembers: true,
+      allowBackgroundChangeByMembers: true,
+    },
     orderBy: { createdAt: "asc" },
   });
   res.json(
@@ -27,7 +35,16 @@ roomsRouter.get("/", async (_req, res) => {
 roomsRouter.get("/:id", async (req, res) => {
   const room = await prisma.room.findUnique({
     where: { id: req.params.id },
-    select: { id: true, name: true, backgroundUrl: true, maxCapacity: true, passwordHash: true },
+    select: {
+      id: true,
+      name: true,
+      backgroundUrl: true,
+      maxCapacity: true,
+      passwordHash: true,
+      creatorId: true,
+      allowNameChangeByMembers: true,
+      allowBackgroundChangeByMembers: true,
+    },
   });
   if (!room) {
     return res.status(404).json({ error: "Room not found" });
@@ -41,7 +58,7 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(4).max(100),
 });
 
-roomsRouter.patch("/:id/password", requireRoomAdmin, async (req, res) => {
+roomsRouter.patch("/:id/password", requireRoomCreator, async (req, res) => {
   const parsed = changePasswordSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
@@ -68,7 +85,7 @@ const removePasswordSchema = z.object({
   password: z.string().optional(),
 });
 
-roomsRouter.delete("/:id/password", requireRoomAdmin, async (req, res) => {
+roomsRouter.delete("/:id/password", requireRoomCreator, async (req, res) => {
   const parsed = removePasswordSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
@@ -94,7 +111,7 @@ const changeNameSchema = z.object({
   name: z.string().trim().min(1).max(50),
 });
 
-roomsRouter.patch("/:id/name", requireRoomAdmin, async (req, res) => {
+roomsRouter.patch("/:id/name", requireRoomEditPermission("name"), async (req, res) => {
   const parsed = changeNameSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
@@ -113,7 +130,7 @@ const changeCapacitySchema = z.object({
   maxCapacity: z.number().int().min(1).max(MAX_ROOM_CAPACITY),
 });
 
-roomsRouter.patch("/:id/capacity", requireRoomAdmin, async (req, res) => {
+roomsRouter.patch("/:id/capacity", requireRoomCreator, async (req, res) => {
   const parsed = changeCapacitySchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
@@ -131,23 +148,28 @@ roomsRouter.patch("/:id/capacity", requireRoomAdmin, async (req, res) => {
   res.json({ maxCapacity: parsed.data.maxCapacity });
 });
 
-roomsRouter.post("/:id/background", requireRoomAdmin, uploadRoomBackground.single("background"), async (req, res) => {
-  const room = await prisma.room.findUnique({ where: { id: req.params.id } });
-  if (!room) {
-    return res.status(404).json({ error: "Room not found" });
-  }
-  if (!req.file) {
-    return res.status(400).json({ error: "No image uploaded" });
-  }
+roomsRouter.post(
+  "/:id/background",
+  requireRoomEditPermission("background"),
+  uploadRoomBackground.single("background"),
+  async (req, res) => {
+    const room = await prisma.room.findUnique({ where: { id: req.params.id } });
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: "No image uploaded" });
+    }
 
-  const backgroundUrl = `/uploads/rooms/${req.file.filename}`;
-  await prisma.room.update({ where: { id: room.id }, data: { backgroundUrl } });
-  deleteUploadedFile(room.backgroundUrl);
+    const backgroundUrl = `/uploads/rooms/${req.file.filename}`;
+    await prisma.room.update({ where: { id: room.id }, data: { backgroundUrl } });
+    deleteUploadedFile(room.backgroundUrl);
 
-  res.json({ backgroundUrl });
-});
+    res.json({ backgroundUrl });
+  },
+);
 
-roomsRouter.delete("/:id/background", requireRoomAdmin, async (req, res) => {
+roomsRouter.delete("/:id/background", requireRoomEditPermission("background"), async (req, res) => {
   const room = await prisma.room.findUnique({ where: { id: req.params.id } });
   if (!room) {
     return res.status(404).json({ error: "Room not found" });
@@ -157,4 +179,23 @@ roomsRouter.delete("/:id/background", requireRoomAdmin, async (req, res) => {
   deleteUploadedFile(room.backgroundUrl);
 
   res.json({ backgroundUrl: null });
+});
+
+const changePermissionsSchema = z.object({
+  allowNameChangeByMembers: z.boolean().optional(),
+  allowBackgroundChangeByMembers: z.boolean().optional(),
+});
+
+roomsRouter.patch("/:id/permissions", requireRoomCreator, async (req, res) => {
+  const parsed = changePermissionsSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.flatten() });
+  }
+
+  const room = await prisma.room.update({
+    where: { id: req.params.id },
+    data: parsed.data,
+    select: { allowNameChangeByMembers: true, allowBackgroundChangeByMembers: true },
+  });
+  res.json(room);
 });

@@ -14,6 +14,10 @@ import {
 import { CharacterPreview } from "../game/CharacterPreview";
 import { ProfileModal } from "../profile/ProfileModal";
 
+function roomPasswordKey(roomId: string) {
+  return `studyxp.roomPassword.${roomId}`;
+}
+
 export function FriendsSection() {
   const { user, token } = useAuth();
   const navigate = useNavigate();
@@ -25,6 +29,8 @@ export function FriendsSection() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewingFriend, setViewingFriend] = useState<Friend | null>(null);
+  const [joiningFriend, setJoiningFriend] = useState<Friend | null>(null);
+  const [passwordDraft, setPasswordDraft] = useState("");
 
   const refresh = (currentToken: string) => {
     Promise.all([listFriends(currentToken), listFriendRequests(currentToken)])
@@ -79,6 +85,24 @@ export function FriendsSection() {
     refresh(token);
   };
 
+  const handleJoinClick = (friend: Friend) => {
+    if (!friend.roomId) return;
+    if (!friend.hasPassword) {
+      sessionStorage.removeItem(roomPasswordKey(friend.roomId));
+      navigate(`/room/${friend.roomId}`);
+      return;
+    }
+    setJoiningFriend(friend);
+    setPasswordDraft("");
+    setError(null);
+  };
+
+  const handleJoinSubmit = (e: FormEvent, roomId: string) => {
+    e.preventDefault();
+    sessionStorage.setItem(roomPasswordKey(roomId), passwordDraft);
+    navigate(`/room/${roomId}`);
+  };
+
   return (
     <div className="friends-section">
       <form className="friend-add-form" onSubmit={handleSend}>
@@ -131,6 +155,7 @@ export function FriendsSection() {
                 {f.displayName}
                 <span className={`friend-status ${f.roomId ? "friend-status-in-room" : "friend-status-away"}`}>
                   {f.roomId ? `In room: ${f.roomName}` : "Not in a room"}
+                  {f.roomId && f.hasPassword && <span title="Password protected"> 🔒</span>}
                 </span>
               </span>
               <div className="friend-list-actions">
@@ -138,7 +163,7 @@ export function FriendsSection() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/room/${f.roomId}`);
+                      handleJoinClick(f);
                     }}
                   >
                     Join
@@ -179,6 +204,28 @@ export function FriendsSection() {
           token={token}
           onClose={() => setViewingFriend(null)}
         />
+      )}
+
+      {joiningFriend && joiningFriend.roomId && (
+        <div className="friend-join-modal-backdrop" onClick={() => setJoiningFriend(null)}>
+          <div className="friend-join-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>{joiningFriend.displayName}</h3>
+            <p className="friend-status friend-status-in-room">In room: {joiningFriend.roomName}</p>
+            <form className="room-join-form" onSubmit={(e) => handleJoinSubmit(e, joiningFriend.roomId!)}>
+              <input
+                type="password"
+                value={passwordDraft}
+                onChange={(e) => setPasswordDraft(e.target.value)}
+                placeholder="Room password"
+                autoFocus
+              />
+              <button type="submit">Go</button>
+              <button type="button" onClick={() => setJoiningFriend(null)}>
+                Cancel
+              </button>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

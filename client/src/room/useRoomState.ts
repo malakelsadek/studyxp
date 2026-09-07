@@ -32,6 +32,9 @@ export function useRoomState(roomId: string) {
   const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
   const [maxCapacity, setMaxCapacity] = useState(20);
   const [hasPassword, setHasPassword] = useState(false);
+  const [creatorId, setCreatorId] = useState<string | null>(null);
+  const [allowNameChangeByMembers, setAllowNameChangeByMembers] = useState(false);
+  const [allowBackgroundChangeByMembers, setAllowBackgroundChangeByMembers] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joined, setJoined] = useState(false);
   const [selfProfile, setSelfProfile] = useState<SelfProfile | null>(null);
@@ -73,6 +76,9 @@ export function useRoomState(roomId: string) {
       backgroundUrl: string | null;
       maxCapacity: number;
       hasPassword: boolean;
+      creatorId: string | null;
+      allowNameChangeByMembers: boolean;
+      allowBackgroundChangeByMembers: boolean;
       selfProfile: SelfProfile | null;
     }) => {
       setSelfId(snapshot.selfId);
@@ -91,6 +97,9 @@ export function useRoomState(roomId: string) {
       setBackgroundUrl(snapshot.backgroundUrl ? resolveAssetUrl(snapshot.backgroundUrl) : null);
       setMaxCapacity(snapshot.maxCapacity);
       setHasPassword(snapshot.hasPassword);
+      setCreatorId(snapshot.creatorId);
+      setAllowNameChangeByMembers(snapshot.allowNameChangeByMembers);
+      setAllowBackgroundChangeByMembers(snapshot.allowBackgroundChangeByMembers);
       setSelfProfile(snapshot.selfProfile);
       setJoined(true);
     };
@@ -124,6 +133,16 @@ export function useRoomState(roomId: string) {
       setBackgroundUrl(url ? resolveAssetUrl(url) : null);
     };
     const onNameUpdate = ({ name: next }: { name: string }) => setName(next);
+    const onPermissionsUpdate = ({
+      allowNameChangeByMembers: nextName,
+      allowBackgroundChangeByMembers: nextBackground,
+    }: {
+      allowNameChangeByMembers: boolean;
+      allowBackgroundChangeByMembers: boolean;
+    }) => {
+      setAllowNameChangeByMembers(nextName);
+      setAllowBackgroundChangeByMembers(nextBackground);
+    };
     const onLeaderboardUpdate = ({ leaderboard: next }: { leaderboard: LeaderboardEntry[] }) =>
       setLeaderboard(next);
     const onPlayerCharacter = ({ id, character }: { id: string; character: string }) => {
@@ -156,6 +175,7 @@ export function useRoomState(roomId: string) {
     socket.on("personal:update", onPersonalUpdate);
     socket.on("room:background", onBackgroundUpdate);
     socket.on("room:name", onNameUpdate);
+    socket.on("room:permissions", onPermissionsUpdate);
     socket.on("leaderboard:update", onLeaderboardUpdate);
     socket.on("player:character", onPlayerCharacter);
     socket.on("timeblock:update", onTimeBlockUpdate);
@@ -175,6 +195,7 @@ export function useRoomState(roomId: string) {
       socket.off("personal:update", onPersonalUpdate);
       socket.off("room:background", onBackgroundUpdate);
       socket.off("room:name", onNameUpdate);
+      socket.off("room:permissions", onPermissionsUpdate);
       socket.off("leaderboard:update", onLeaderboardUpdate);
       socket.off("player:character", onPlayerCharacter);
       socket.off("timeblock:update", onTimeBlockUpdate);
@@ -207,6 +228,8 @@ export function useRoomState(roomId: string) {
   const reorderPersonalTodos = (orderedIds: string[]) => socket?.emit("personal:reorder", { orderedIds });
   const broadcastBackground = (url: string | null) => socket?.emit("room:background", { url });
   const broadcastName = (nextName: string) => socket?.emit("room:name", { name: nextName });
+  const broadcastPermissions = (next: { allowNameChangeByMembers: boolean; allowBackgroundChangeByMembers: boolean }) =>
+    socket?.emit("room:permissions", next);
   const logStudyTime = (durationMs: number) => socket?.emit("study:log", { durationMs });
   const addTimeBlock = (startMinute: number, endMinute: number, label: string, tasks: string[], date: string) =>
     socket?.emit("timeblock:add", { date, startMinute, endMinute, label, tasks });
@@ -262,6 +285,9 @@ export function useRoomState(roomId: string) {
     maxCapacity,
     hasPassword,
     setHasPassword,
+    creatorId,
+    allowNameChangeByMembers,
+    allowBackgroundChangeByMembers,
     joinError,
     selfProfile,
     move,
@@ -289,6 +315,7 @@ export function useRoomState(roomId: string) {
     reorderPersonalTodos,
     broadcastBackground,
     broadcastName,
+    broadcastPermissions,
     setMaxCapacity,
     logStudyTime,
     addTimeBlock,

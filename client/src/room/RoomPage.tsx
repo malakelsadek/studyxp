@@ -109,6 +109,9 @@ export function RoomPage() {
     maxCapacity,
     hasPassword,
     setHasPassword,
+    creatorId,
+    allowNameChangeByMembers,
+    allowBackgroundChangeByMembers,
     joinError,
     selfProfile,
     move,
@@ -136,6 +139,7 @@ export function RoomPage() {
     reorderPersonalTodos,
     broadcastBackground,
     broadcastName,
+    broadcastPermissions,
     setMaxCapacity,
     logStudyTime,
     addTimeBlock,
@@ -292,7 +296,8 @@ export function RoomPage() {
             <RoomSettings
               roomId={roomId}
               token={token}
-              currentUserEmail={user.email ?? null}
+              currentUserId={user.id}
+              creatorId={creatorId}
               currentName={name}
               onNameChange={broadcastName}
               currentBackgroundUrl={backgroundUrl}
@@ -301,6 +306,9 @@ export function RoomPage() {
               onCapacityChange={setMaxCapacity}
               currentHasPassword={hasPassword}
               onHasPasswordChange={setHasPassword}
+              allowNameChangeByMembers={allowNameChangeByMembers}
+              allowBackgroundChangeByMembers={allowBackgroundChangeByMembers}
+              onPermissionsChange={broadcastPermissions}
             />
           </Tile>
         )}

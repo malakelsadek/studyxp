@@ -39,16 +39,20 @@ friendsRouter.get("/", requireAuth, async (req, res) => {
   const roomIds = friendships.map((f) => findUserRoomId(f.friend.id));
   const rooms = await prisma.room.findMany({
     where: { id: { in: roomIds.filter((id): id is string => id !== null) } },
-    select: { id: true, name: true },
+    select: { id: true, name: true, passwordHash: true },
   });
-  const roomNames = new Map(rooms.map((r) => [r.id, r.name]));
+  const roomsById = new Map(rooms.map((r) => [r.id, r]));
 
   res.json(
-    friendships.map((f, i) => ({
-      ...f.friend,
-      roomId: roomIds[i],
-      roomName: roomIds[i] ? (roomNames.get(roomIds[i]!) ?? null) : null,
-    })),
+    friendships.map((f, i) => {
+      const room = roomIds[i] ? roomsById.get(roomIds[i]!) : undefined;
+      return {
+        ...f.friend,
+        roomId: roomIds[i],
+        roomName: room?.name ?? null,
+        hasPassword: room ? room.passwordHash !== null : false,
+      };
+    }),
   );
 });
 
