@@ -11,6 +11,7 @@ export interface AuthUser {
   character: string;
   ownedCharacters: string[];
   coins: number;
+  nameColor: string | null;
 }
 
 export interface AuthResponse {
@@ -36,6 +37,7 @@ export interface UserProfile {
   coins: number;
   tasksCompleted: number;
   createdAt: string;
+  nameColor: string | null;
   stats: UserStats;
 }
 
@@ -117,7 +119,13 @@ export function getProfile(userId: string) {
 
 export function updateProfile(
   token: string,
-  updates: { displayName?: string; bio?: string; interests?: string[]; character?: string },
+  updates: {
+    displayName?: string;
+    bio?: string;
+    interests?: string[];
+    character?: string;
+    nameColor?: string | null;
+  },
 ) {
   return patchJson<UserProfile>("/users/me", updates, token);
 }

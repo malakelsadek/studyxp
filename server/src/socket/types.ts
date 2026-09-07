@@ -6,6 +6,7 @@ export interface SessionUser {
   character: string;
   ownedCharacters: string[];
   coins: number;
+  nameColor: string | null;
 }
 
 export interface SelfProfile {
@@ -13,6 +14,7 @@ export interface SelfProfile {
   character: string;
   ownedCharacters: string[];
   coins: number;
+  nameColor: string | null;
 }
 
 export type TimerMode = "pomodoro" | "stopwatch";
@@ -34,6 +36,7 @@ export interface PlayerDTO {
   displayName: string;
   isGuest: boolean;
   character: string;
+  nameColor: string | null;
   x: number;
   y: number;
 }
@@ -42,6 +45,7 @@ export interface ChatMessage {
   id: string;
   fromId: string;
   from: string;
+  nameColor: string | null;
   text: string;
   at: number;
 }
@@ -131,6 +135,7 @@ export interface ClientToServerEvents {
   "room:music": (payload: { kind: "youtube" | "spotify"; url: string | null }) => void;
   "study:log": (payload: { durationMs: number }) => void;
   "character:change": (payload: { character: string }) => void;
+  "nameColor:change": (payload: { nameColor: string | null }) => void;
   "timeblock:add": (payload: {
     date: string;
     startMinute: number;
@@ -173,6 +178,7 @@ export interface ServerToClientEvents {
   "room:music": (payload: { kind: "youtube" | "spotify"; url: string | null }) => void;
   "leaderboard:update": (payload: { leaderboard: LeaderboardEntry[] }) => void;
   "player:character": (payload: { id: string; character: string }) => void;
+  "player:nameColor": (payload: { id: string; nameColor: string | null }) => void;
   "timeblock:update": (payload: { timeBlocks: TimeBlock[] }) => void;
   "sharedTimeblock:update": (payload: { sharedTimeBlocks: TimeBlock[] }) => void;
   "personalTimer:update": (payload: TimerState) => void;

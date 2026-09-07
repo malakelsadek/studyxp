@@ -51,7 +51,15 @@ export function TodoTile({
   const filterOptions = [...assignablePlayers];
   for (const t of sharedTodos) {
     if (t.assigneeId && !filterOptions.some((p) => p.id === t.assigneeId)) {
-      filterOptions.push({ id: t.assigneeId, displayName: `${t.assigneeName} (left)`, isGuest: false, character: "", x: 0, y: 0 });
+      filterOptions.push({
+        id: t.assigneeId,
+        displayName: `${t.assigneeName} (left)`,
+        isGuest: false,
+        character: "",
+        nameColor: null,
+        x: 0,
+        y: 0,
+      });
     }
   }
 

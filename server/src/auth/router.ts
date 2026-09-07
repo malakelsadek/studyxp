@@ -39,6 +39,7 @@ authRouter.post("/register", async (req, res) => {
       character: user.character,
       ownedCharacters: user.ownedCharacters,
       coins: user.coins,
+      nameColor: user.nameColor,
     },
   });
 });
@@ -75,6 +76,7 @@ authRouter.post("/login", async (req, res) => {
       character: user.character,
       ownedCharacters: user.ownedCharacters,
       coins: user.coins,
+      nameColor: user.nameColor,
     },
   });
 });

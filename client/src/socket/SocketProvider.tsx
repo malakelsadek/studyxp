@@ -32,7 +32,9 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const auth = user.isGuest ? { guestName: user.displayName, character: user.character } : { token };
+    const auth = user.isGuest
+      ? { guestName: user.displayName, character: user.character, nameColor: user.nameColor }
+      : { token };
     const nextSocket = io(SERVER_URL, { auth, autoConnect: true });
 
     const onConnect = () => {
@@ -58,8 +60,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       setSocket(null);
       setConnected(false);
     };
-    // Deliberately excludes user.character: later character changes are pushed live over
-    // "character:change" instead of reconnecting, which would otherwise drop the player from their room.
+    // Deliberately excludes user.character/nameColor: later changes are pushed live over
+    // "character:change"/"nameColor:change" instead of reconnecting, which would otherwise drop the player from their room.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, token, logout]);
 

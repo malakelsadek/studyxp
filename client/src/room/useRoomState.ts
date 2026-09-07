@@ -148,6 +148,9 @@ export function useRoomState(roomId: string) {
     const onPlayerCharacter = ({ id, character }: { id: string; character: string }) => {
       setPlayers((prev) => (prev[id] ? { ...prev, [id]: { ...prev[id], character } } : prev));
     };
+    const onPlayerNameColor = ({ id, nameColor }: { id: string; nameColor: string | null }) => {
+      setPlayers((prev) => (prev[id] ? { ...prev, [id]: { ...prev[id], nameColor } } : prev));
+    };
     const onTimeBlockUpdate = ({ timeBlocks: next }: { timeBlocks: TimeBlock[] }) => setTimeBlocks(next);
     const onSharedTimeBlockUpdate = ({ sharedTimeBlocks: next }: { sharedTimeBlocks: TimeBlock[] }) =>
       setSharedTimeBlocks(next);
@@ -178,6 +181,7 @@ export function useRoomState(roomId: string) {
     socket.on("room:permissions", onPermissionsUpdate);
     socket.on("leaderboard:update", onLeaderboardUpdate);
     socket.on("player:character", onPlayerCharacter);
+    socket.on("player:nameColor", onPlayerNameColor);
     socket.on("timeblock:update", onTimeBlockUpdate);
     socket.on("sharedTimeblock:update", onSharedTimeBlockUpdate);
     socket.on("personalTimer:update", onPersonalTimerUpdate);
@@ -198,6 +202,7 @@ export function useRoomState(roomId: string) {
       socket.off("room:permissions", onPermissionsUpdate);
       socket.off("leaderboard:update", onLeaderboardUpdate);
       socket.off("player:character", onPlayerCharacter);
+      socket.off("player:nameColor", onPlayerNameColor);
       socket.off("timeblock:update", onTimeBlockUpdate);
       socket.off("sharedTimeblock:update", onSharedTimeBlockUpdate);
       socket.off("personalTimer:update", onPersonalTimerUpdate);

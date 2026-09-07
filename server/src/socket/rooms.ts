@@ -205,13 +205,28 @@ export function changeCharacter(roomId: string, socketId: string, character: str
   return player;
 }
 
-export function addChatMessage(roomId: string, fromId: string, from: string, text: string): ChatMessage | null {
+export function changeNameColor(roomId: string, socketId: string, nameColor: string | null): PlayerDTO | null {
+  const room = rooms.get(roomId);
+  const player = room?.players.get(socketId);
+  if (!room || !player) return null;
+  player.nameColor = nameColor;
+  return player;
+}
+
+export function addChatMessage(
+  roomId: string,
+  fromId: string,
+  from: string,
+  nameColor: string | null,
+  text: string,
+): ChatMessage | null {
   const room = rooms.get(roomId);
   if (!room) return null;
   const message: ChatMessage = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     fromId,
     from,
+    nameColor,
     text,
     at: Date.now(),
   };

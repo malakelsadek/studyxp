@@ -10,6 +10,7 @@ export interface SessionUser {
   ownedCharacters: string[];
   coins: number;
   email?: string;
+  nameColor: string | null;
 }
 
 interface AuthState {
@@ -24,8 +25,15 @@ interface AuthContextValue extends AuthState {
   logout: () => void;
   updateDisplayName: (displayName: string) => void;
   updateCharacter: (character: string) => void;
+  updateNameColor: (nameColor: string | null) => void;
   setCoins: (coins: number) => void;
-  syncProfile: (profile: { displayName: string; character: string; ownedCharacters: string[]; coins: number }) => void;
+  syncProfile: (profile: {
+    displayName: string;
+    character: string;
+    ownedCharacters: string[];
+    coins: number;
+    nameColor: string | null;
+  }) => void;
 }
 
 const STORAGE_KEY = "studyxp.auth";
@@ -50,6 +58,7 @@ function toSessionUser(user: AuthUser): SessionUser {
     character: user.character,
     ownedCharacters: user.ownedCharacters,
     coins: user.coins,
+    nameColor: user.nameColor,
     isGuest: false,
   };
 }
@@ -80,6 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         character,
         ownedCharacters: ALL_CHARACTER_IDS,
         coins: 0,
+        nameColor: null,
         isGuest: true,
       },
     });
@@ -95,12 +105,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState((prev) => (prev.user ? { ...prev, user: { ...prev.user, character } } : prev));
   }, []);
 
+  const updateNameColor = useCallback((nameColor: string | null) => {
+    setState((prev) => (prev.user ? { ...prev, user: { ...prev.user, nameColor } } : prev));
+  }, []);
+
   const setCoins = useCallback((coins: number) => {
     setState((prev) => (prev.user ? { ...prev, user: { ...prev.user, coins } } : prev));
   }, []);
 
   const syncProfile = useCallback(
-    (profile: { displayName: string; character: string; ownedCharacters: string[]; coins: number }) => {
+    (profile: {
+      displayName: string;
+      character: string;
+      ownedCharacters: string[];
+      coins: number;
+      nameColor: string | null;
+    }) => {
       setState((prev) => (prev.user ? { ...prev, user: { ...prev.user, ...profile } } : prev));
     },
     [],
@@ -116,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         updateDisplayName,
         updateCharacter,
+        updateNameColor,
         setCoins,
         syncProfile,
       }}

@@ -4,6 +4,7 @@ import { prisma } from "../prisma.js";
 import { requireAuth } from "../auth/requireAuth.js";
 import { getUserStats } from "./stats.js";
 import { isKnownCharacter } from "./characters.js";
+import { isValidNameColor } from "./nameColor.js";
 
 export const usersRouter = Router();
 
@@ -17,6 +18,7 @@ const PROFILE_SELECT = {
   coins: true,
   tasksCompleted: true,
   createdAt: true,
+  nameColor: true,
 } as const;
 
 usersRouter.get("/:id/profile", async (req, res) => {
@@ -41,6 +43,7 @@ const updateProfileSchema = z.object({
     .regex(/^char-[a-z0-9-]+$/)
     .max(20)
     .optional(),
+  nameColor: z.string().max(20).nullable().optional(),
 });
 
 usersRouter.patch("/me", requireAuth, async (req, res) => {
@@ -51,6 +54,10 @@ usersRouter.patch("/me", requireAuth, async (req, res) => {
 
   if (parsed.data.character && !isKnownCharacter(parsed.data.character)) {
     return res.status(400).json({ error: "Unknown outfit" });
+  }
+
+  if (parsed.data.nameColor !== undefined && parsed.data.nameColor !== null && !isValidNameColor(parsed.data.nameColor)) {
+    return res.status(400).json({ error: "Unknown name color" });
   }
 
   const user = await prisma.user.update({

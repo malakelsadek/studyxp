@@ -3,12 +3,15 @@ import type { PlayerDTO } from "../socket/types";
 import { CHARACTER_PRESETS, type CharacterPose } from "./characterPresets";
 
 const MOVE_EMIT_INTERVAL_MS = 60;
-const BUBBLE_DURATION_MS = 8000;
+const BUBBLE_DURATION_MS = 21000;
+const MAX_BUBBLES_PER_PLAYER = 3;
+const BUBBLE_GAP = 6;
 const SPRITE_DISPLAY_HEIGHT = 84 * 1.2;
 const HIT_WIDTH = 56 * 1.2;
 const MOVE_EPSILON = 0.5;
 const DEFAULT_BACKGROUND_URL = "/assets/map.png";
 export const FONT_FAMILY = "'Courier New', Courier, monospace";
+const BUBBLE_FONT_FAMILY = "'Lato', 'Segoe UI', sans-serif";
 export const WORLD_WIDTH = 1536;
 export const WORLD_HEIGHT = 1024;
 
@@ -27,14 +30,18 @@ function resolveDirectionFromDelta(dx: number, dy: number): CharacterPose {
   return dy < 0 ? "up" : "down";
 }
 
+interface Bubble {
+  text: Phaser.GameObjects.Text;
+  timer: Phaser.Time.TimerEvent;
+}
+
 interface PlayerVisual {
   container: Phaser.GameObjects.Container;
   sprite: Phaser.GameObjects.Image;
   label: Phaser.GameObjects.Text;
   character: string;
   direction: CharacterPose;
-  bubble?: Phaser.GameObjects.Text;
-  bubbleTimer?: Phaser.Time.TimerEvent;
+  bubbles: Bubble[];
 }
 
 export class MainScene extends Phaser.Scene {
@@ -75,7 +82,13 @@ export class MainScene extends Phaser.Scene {
       .setOrigin(0, 0)
       .setDisplaySize(WORLD_WIDTH, WORLD_HEIGHT);
 
-    this.localVisual = this.createVisual(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, this.selfCharacter, this.selfDisplayName, true);
+    this.localVisual = this.createVisual(
+      WORLD_WIDTH / 2,
+      WORLD_HEIGHT / 2,
+      this.selfCharacter,
+      this.selfDisplayName,
+      true,
+    );
     this.localVisual.container.on("pointerdown", () => {
       if (this.selfId) this.onPlayerClick?.(this.selfId);
     });
@@ -176,26 +189,34 @@ export class MainScene extends Phaser.Scene {
     const visual = playerId === this.selfId ? this.localVisual : this.otherVisuals.get(playerId);
     if (!visual) return;
 
-    visual.bubble?.destroy();
-    visual.bubbleTimer?.remove();
+    if (visual.bubbles.length >= MAX_BUBBLES_PER_PLAYER) {
+      const oldest = visual.bubbles.shift();
+      oldest?.timer.remove();
+      oldest?.text.destroy();
+    }
 
-    visual.bubble = this.add.text(visual.container.x, 0, text, {
-      fontFamily: FONT_FAMILY,
-      fontSize: "12px",
+    const bubbleText = this.add.text(visual.container.x, 0, text, {
+      fontFamily: BUBBLE_FONT_FAMILY,
+      fontSize: "15px",
+      fontStyle: "bold",
       color: "#111111",
       backgroundColor: "#ffffff",
-      padding: { x: 6, y: 4 },
-      wordWrap: { width: 160 },
+      padding: { x: 8, y: 5 },
+      wordWrap: { width: 200 },
     });
-    visual.bubble.setOrigin(0.5, 1);
-    visual.bubble.setDepth(20);
-    this.updateAttachments(visual);
+    bubbleText.setOrigin(0.5, 1);
+    bubbleText.setDepth(20);
+    bubbleText.setShadow(1, 1, "#00000066", 2, true, true);
 
-    visual.bubbleTimer = this.time.delayedCall(BUBBLE_DURATION_MS, () => {
-      visual.bubble?.destroy();
-      visual.bubble = undefined;
-      visual.bubbleTimer = undefined;
+    const timer = this.time.delayedCall(BUBBLE_DURATION_MS, () => {
+      const index = visual.bubbles.findIndex((b) => b.text === bubbleText);
+      if (index !== -1) visual.bubbles.splice(index, 1);
+      bubbleText.destroy();
+      this.updateAttachments(visual);
     });
+
+    visual.bubbles.push({ text: bubbleText, timer });
+    this.updateAttachments(visual);
   }
 
   syncPlayers(players: Record<string, PlayerDTO>) {
@@ -223,8 +244,10 @@ export class MainScene extends Phaser.Scene {
       if (!seen.has(id)) {
         visual.container.destroy();
         visual.label.destroy();
-        visual.bubble?.destroy();
-        visual.bubbleTimer?.remove();
+        for (const bubble of visual.bubbles) {
+          bubble.timer.remove();
+          bubble.text.destroy();
+        }
         this.otherVisuals.delete(id);
       }
     }
@@ -252,15 +275,17 @@ export class MainScene extends Phaser.Scene {
     }
 
     const label = this.add.text(x, y - SPRITE_DISPLAY_HEIGHT / 2 - 10, name, {
-      fontFamily: FONT_FAMILY,
-      fontSize: "12px",
+      fontFamily: BUBBLE_FONT_FAMILY,
+      fontSize: "13px",
+      fontStyle: "bold",
       color: "#ffffff",
-      backgroundColor: "#00000080",
-      padding: { x: 4, y: 2 },
+      backgroundColor: "#00000090",
+      padding: { x: 5, y: 3 },
     });
     label.setOrigin(0.5, 1);
+    label.setShadow(1, 1, "#00000080", 1, true, true);
 
-    const visual: PlayerVisual = { container, sprite, label, character, direction: "still" };
+    const visual: PlayerVisual = { container, sprite, label, character, direction: "still", bubbles: [] };
     this.applyCharacter(visual, character, "still");
     return visual;
   }
@@ -277,6 +302,12 @@ export class MainScene extends Phaser.Scene {
 
   private updateAttachments(visual: PlayerVisual) {
     visual.label.setPosition(visual.container.x, visual.container.y - SPRITE_DISPLAY_HEIGHT / 2 - 10);
-    visual.bubble?.setPosition(visual.container.x, visual.container.y - SPRITE_DISPLAY_HEIGHT / 2 - 26);
+
+    let cursorY = visual.container.y - SPRITE_DISPLAY_HEIGHT / 2 - 34;
+    for (let i = visual.bubbles.length - 1; i >= 0; i--) {
+      const bubble = visual.bubbles[i].text;
+      bubble.setPosition(visual.container.x, cursorY);
+      cursorY -= bubble.height + BUBBLE_GAP;
+    }
   }
 }

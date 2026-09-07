@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { PhaserGame } from "../game/PhaserGame";
+import { PhaserGame, type PhaserGameHandle } from "../game/PhaserGame";
 import { useRoomState } from "./useRoomState";
 import { useStudySessionLogger } from "./useStudySessionLogger";
 import { ChatOverlay } from "./ChatOverlay";
@@ -42,6 +42,8 @@ export function RoomPage() {
     people: false,
   });
   const [chatActive, setChatActive] = useState(false);
+  const [showChatMessages, setShowChatMessages] = useState(true);
+  const phaserRef = useRef<PhaserGameHandle>(null);
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
@@ -51,6 +53,17 @@ export function RoomPage() {
   }, [user, navigate]);
 
   useEffect(() => {
+    const isTypingInField = () => {
+      const el = document.activeElement;
+      return (
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        el instanceof HTMLSelectElement ||
+        el instanceof HTMLButtonElement ||
+        (el instanceof HTMLElement && el.isContentEditable)
+      );
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && chatActive) {
         e.preventDefault();
@@ -58,13 +71,23 @@ export function RoomPage() {
         return;
       }
 
+      if (
+        !chatActive &&
+        !e.altKey &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        (e.key === "Enter" || e.key.toLowerCase() === "t") &&
+        !isTypingInField()
+      ) {
+        e.preventDefault();
+        setChatActive(true);
+        return;
+      }
+
       if (!e.altKey) return;
       const key = e.key.toLowerCase();
 
-      if (key === "c") {
-        e.preventDefault();
-        setChatActive(true);
-      } else if (key === "t") {
+      if (key === "t") {
         e.preventDefault();
         setOpenPanels((prev) => ({ ...prev, timer: !prev.timer }));
       } else if (key === "d") {
@@ -82,6 +105,9 @@ export function RoomPage() {
       } else if (key === "s") {
         e.preventDefault();
         setOpenPanels((prev) => ({ ...prev, spotify: !prev.spotify }));
+      } else if (key === "h") {
+        e.preventDefault();
+        setShowChatMessages((prev) => !prev);
       }
     };
 
@@ -151,6 +177,13 @@ export function RoomPage() {
     leaveRoom,
   } = useRoomState(roomId);
 
+  const handleSendChat = (text: string) => {
+    // Show the sender's own bubble immediately instead of waiting on the round trip
+    // through the server, which otherwise makes the bubble feel delayed.
+    phaserRef.current?.showLocalChatBubble(text);
+    sendChat(text);
+  };
+
   const personalTimer = {
     timer: personalTimerState,
     startTimer: startPersonalTimer,
@@ -213,6 +246,7 @@ export function RoomPage() {
 
       <div className="room-body">
         <PhaserGame
+          ref={phaserRef}
           players={players}
           selfId={selfId}
           selfDisplayName={user.displayName}
@@ -315,7 +349,7 @@ export function RoomPage() {
 
         {openPanels.outfit && (
           <Tile title="Outfit" initialPosition={{ x: 480, y: 448 }} onClose={() => togglePanel("outfit")}>
-            <OutfitPanel currentCharacter={user.character} />
+            <OutfitPanel currentCharacter={user.character} currentNameColor={user.nameColor} />
           </Tile>
         )}
 
@@ -361,7 +395,13 @@ export function RoomPage() {
           </Tile>
         )}
 
-        <ChatOverlay messages={messages} onSend={sendChat} active={chatActive} />
+        <ChatOverlay
+          messages={messages}
+          onSend={handleSendChat}
+          active={chatActive}
+          showMessages={showChatMessages}
+          onToggleMessages={() => setShowChatMessages((prev) => !prev)}
+        />
 
         <SideNav openPanels={openPanels} onToggle={togglePanel} />
 

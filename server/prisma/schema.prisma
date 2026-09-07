@@ -16,6 +16,7 @@ model User {
   interests              String[]        @default([])
   character              String          @default("char-1")
   ownedCharacters        String[]        @default(["char-1", "char-2"])
+  nameColor              String?
   coins                  Int             @default(0)
   studyMsBanked          Int             @default(0)
   tasksCompleted         Int             @default(0)

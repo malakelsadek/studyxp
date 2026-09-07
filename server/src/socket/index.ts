@@ -13,6 +13,7 @@ import {
   advancePersonalTimerPhase,
   advanceTimerPhase,
   changeCharacter,
+  changeNameColor,
   configurePersonalTimer,
   configureTimer,
   getPlayerCount,
@@ -41,6 +42,7 @@ import {
   togglePersonalTodo,
 } from "./rooms.js";
 import { ALL_CHARACTER_IDS, isKnownCharacter } from "../users/characters.js";
+import { isValidNameColor } from "../users/nameColor.js";
 import type {
   ClientToServerEvents,
   InterServerEvents,
@@ -87,6 +89,10 @@ function sanitizeCharacter(character: unknown): string {
   return typeof character === "string" && isKnownCharacter(character) ? character : DEFAULT_CHARACTER;
 }
 
+function sanitizeNameColor(nameColor: unknown): string | null {
+  return isValidNameColor(nameColor) ? nameColor : null;
+}
+
 function clampMs(value: unknown, fallback: number): number {
   const n = typeof value === "number" && Number.isFinite(value) ? value : fallback;
   return Math.min(MAX_TIMER_MS, Math.max(MIN_TIMER_MS, n));
@@ -127,10 +133,11 @@ export function registerSocketHandlers(io: AppServer) {
   }
 
   io.use(async (socket, next) => {
-    const { token, guestName, character } = socket.handshake.auth as {
+    const { token, guestName, character, nameColor } = socket.handshake.auth as {
       token?: string;
       guestName?: string;
       character?: string;
+      nameColor?: string | null;
     };
 
     try {
@@ -146,6 +153,7 @@ export function registerSocketHandlers(io: AppServer) {
           character: sanitizeCharacter(user.character),
           ownedCharacters: user.ownedCharacters,
           coins: user.coins,
+          nameColor: sanitizeNameColor(user.nameColor),
         };
       } else if (guestName && guestName.trim().length > 0) {
         socket.data.user = {
@@ -156,6 +164,7 @@ export function registerSocketHandlers(io: AppServer) {
           character: sanitizeCharacter(character),
           ownedCharacters: ALL_CHARACTER_IDS,
           coins: 0,
+          nameColor: sanitizeNameColor(nameColor),
         };
       } else {
         return next(new Error("authentication required"));
@@ -200,6 +209,7 @@ export function registerSocketHandlers(io: AppServer) {
             character: socket.data.user.character,
             ownedCharacters: socket.data.user.ownedCharacters,
             coins: socket.data.user.coins,
+            nameColor: socket.data.user.nameColor,
           };
       const snapshot = joinRoom(
         roomId,
@@ -291,6 +301,16 @@ export function registerSocketHandlers(io: AppServer) {
       if (player) io.to(roomId).emit("player:character", { id: player.id, character: sanitized });
     });
 
+    socket.on("nameColor:change", ({ nameColor }) => {
+      const sanitized = sanitizeNameColor(nameColor);
+      socket.data.user.nameColor = sanitized;
+
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      const player = changeNameColor(roomId, socket.id, sanitized);
+      if (player) io.to(roomId).emit("player:nameColor", { id: player.id, nameColor: sanitized });
+    });
+
     socket.on("chat:send", ({ text }) => {
       const roomId = socket.data.roomId;
       if (!roomId || !text?.trim()) return;
@@ -298,6 +318,7 @@ export function registerSocketHandlers(io: AppServer) {
         roomId,
         socket.data.user.id,
         socket.data.user.displayName,
+        socket.data.user.nameColor,
         text.trim().slice(0, MAX_CHAT_LENGTH),
       );
       if (message) io.to(roomId).emit("chat:message", message);

@@ -1,6 +1,7 @@
 const SHORTCUTS: Array<{ keys: string; description: string }> = [
-  { keys: "Alt + C", description: "Open chat and start typing" },
+  { keys: "T / Enter", description: "Open chat and start typing" },
   { keys: "Esc", description: "Close chat" },
+  { keys: "Alt + H", description: "Show or hide the chat log" },
   { keys: "Alt + T", description: "Toggle timer" },
   { keys: "Alt + D", description: "Toggle to-do list" },
   { keys: "Alt + B", description: "Toggle calendar" },

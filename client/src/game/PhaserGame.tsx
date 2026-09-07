@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import Phaser from "phaser";
 import { MainScene } from "./MainScene";
 import type { ChatMessage, PlayerDTO } from "../socket/types";
@@ -14,7 +14,11 @@ interface PhaserGameProps {
   onPlayerClick: (id: string) => void;
 }
 
-export function PhaserGame({
+export interface PhaserGameHandle {
+  showLocalChatBubble: (text: string) => void;
+}
+
+export const PhaserGame = forwardRef<PhaserGameHandle, PhaserGameProps>(function PhaserGame({
   players,
   selfId,
   selfDisplayName,
@@ -23,7 +27,7 @@ export function PhaserGame({
   messages,
   onLocalMove,
   onPlayerClick,
-}: PhaserGameProps) {
+}, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const sceneRef = useRef<MainScene | null>(null);
@@ -38,6 +42,14 @@ export function PhaserGame({
   const backgroundUrlRef = useRef(backgroundUrl);
   backgroundUrlRef.current = backgroundUrl;
   const seenMessageIds = useRef<Set<string> | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    showLocalChatBubble: (text: string) => {
+      if (selfRef.current.selfId) {
+        sceneRef.current?.showChatBubble(selfRef.current.selfId, text);
+      }
+    },
+  }), []);
 
   useEffect(() => {
     if (!containerRef.current || gameRef.current) return;
@@ -106,4 +118,4 @@ export function PhaserGame({
   }, [messages]);
 
   return <div ref={containerRef} />;
-}
+});
