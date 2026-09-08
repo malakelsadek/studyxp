@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "adhan": "^4.4.6",
     "phaser": "^3.87.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

@@ -38,6 +38,13 @@ const SOUND_PRESETS: Record<string, ToneStep[]> = {
     { freq: 1046.5, start: 0.3, duration: 0.45, type: "square" },
     { freq: 1318.51, start: 0.32, duration: 0.4, type: "sine", gain: 0.15 },
   ],
+  // A "sad trombone"-style descending line for the prayer-skip reminder.
+  sad: [
+    { freq: 392.0, start: 0, duration: 0.35, type: "sine", gain: 0.25 },
+    { freq: 349.23, start: 0.3, duration: 0.35, type: "sine", gain: 0.25 },
+    { freq: 311.13, start: 0.6, duration: 0.35, type: "sine", gain: 0.25 },
+    { freq: 293.66, start: 0.9, duration: 0.7, type: "sine", gain: 0.22 },
+  ],
 };
 
 export interface TimerSoundOption {
@@ -99,4 +106,8 @@ export function playTimerSound(id: string): void {
 
 export function playPartySound(): void {
   playSteps(SOUND_PRESETS.party);
+}
+
+export function playSadSound(): void {
+  playSteps(SOUND_PRESETS.sad);
 }

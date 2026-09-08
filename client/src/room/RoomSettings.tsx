@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   MAX_ROOM_CAPACITY,
   changeRoomCapacity,
@@ -9,6 +9,7 @@ import {
   resetRoomBackground,
   uploadRoomBackground,
 } from "../lib/api";
+import { SettingsSection } from "./SettingsSection";
 
 type SectionKey = "name" | "password" | "capacity" | "background" | "permissions" | "chat" | "timerControl";
 
@@ -39,31 +40,6 @@ interface RoomSettingsProps {
 
 function roomPasswordKey(roomId: string) {
   return `studyxp.roomPassword.${roomId}`;
-}
-
-function SettingsSection({
-  title,
-  meta,
-  isOpen,
-  onToggle,
-  children,
-}: {
-  title: string;
-  meta: string;
-  isOpen: boolean;
-  onToggle: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <div className={`room-settings-section${isOpen ? " open" : ""}`}>
-      <button type="button" className="room-settings-section-header" onClick={onToggle}>
-        <span className="room-settings-section-chevron">▸</span>
-        <span className="room-settings-section-title">{title}</span>
-        <span className="room-settings-section-meta">{meta}</span>
-      </button>
-      {isOpen && <div className="room-settings-section-body">{children}</div>}
-    </div>
-  );
 }
 
 export function RoomSettings({
@@ -284,141 +260,141 @@ export function RoomSettings({
       )}
 
       {isCreator && (
-      <SettingsSection
-        title="Password protection"
-        meta={currentHasPassword ? "Protected" : "Open"}
-        isOpen={openSection === "password"}
-        onToggle={() => toggleSection("password")}
-      >
-        <label className="room-settings-toggle">
-          <input
-            type="checkbox"
-            checked={passwordAction === "idle" ? currentHasPassword : passwordAction !== "remove"}
-            onChange={handleTogglePassword}
-          />
-          Require a password to join
-        </label>
-        <p className="profile-muted">
-          {currentHasPassword
-            ? "Anyone joining this room must enter the password."
-            : "This room is open — anyone can join without a password."}
-        </p>
+        <SettingsSection
+          title="Password protection"
+          meta={currentHasPassword ? "Protected" : "Open"}
+          isOpen={openSection === "password"}
+          onToggle={() => toggleSection("password")}
+        >
+          <label className="room-settings-toggle">
+            <input
+              type="checkbox"
+              checked={passwordAction === "idle" ? currentHasPassword : passwordAction !== "remove"}
+              onChange={handleTogglePassword}
+            />
+            Require a password to join
+          </label>
+          <p className="profile-muted">
+            {currentHasPassword
+              ? "Anyone joining this room must enter the password."
+              : "This room is open — anyone can join without a password."}
+          </p>
 
-        {passwordAction === "set" && (
-          <form className="room-settings-form" onSubmit={handleSubmit}>
-            <label className="room-settings-label">Set a password</label>
-            <div className="room-settings-row">
+          {passwordAction === "set" && (
+            <form className="room-settings-form" onSubmit={handleSubmit}>
+              <label className="room-settings-label">Set a password</label>
+              <div className="room-settings-row">
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="New password"
+                  minLength={4}
+                  required
+                  autoFocus
+                />
+                <button type="submit" disabled={status === "saving"}>
+                  {status === "saving" ? "..." : "Save"}
+                </button>
+                <button type="button" onClick={() => setPasswordAction("idle")}>
+                  Cancel
+                </button>
+              </div>
+              {error && <p className="profile-error">{error}</p>}
+            </form>
+          )}
+
+          {passwordAction === "remove" && (
+            <form className="room-settings-form" onSubmit={handleRemovePassword}>
+              <label className="room-settings-label">Confirm current password to disable</label>
+              <div className="room-settings-row">
+                <input
+                  type="password"
+                  value={removePasswordInput}
+                  onChange={(e) => setRemovePasswordInput(e.target.value)}
+                  placeholder="Current password"
+                  required
+                  autoFocus
+                />
+                <button type="submit" disabled={removeStatus === "saving"}>
+                  {removeStatus === "saving" ? "..." : "Confirm"}
+                </button>
+                <button type="button" onClick={() => setPasswordAction("idle")}>
+                  Cancel
+                </button>
+              </div>
+              {removeError && <p className="profile-error">{removeError}</p>}
+            </form>
+          )}
+
+          {status === "done" && passwordAction === "idle" && (
+            <p className="room-settings-success">Password updated.</p>
+          )}
+
+          {currentHasPassword && passwordAction === "idle" && (
+            <button type="button" className="room-settings-link" onClick={() => setPasswordAction("change")}>
+              Change password
+            </button>
+          )}
+
+          {passwordAction === "change" && (
+            <form className="room-settings-form" onSubmit={handleSubmit}>
+              <label className="room-settings-label">Change password</label>
               <input
                 type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="New password"
-                minLength={4}
-                required
-                autoFocus
-              />
-              <button type="submit" disabled={status === "saving"}>
-                {status === "saving" ? "..." : "Save"}
-              </button>
-              <button type="button" onClick={() => setPasswordAction("idle")}>
-                Cancel
-              </button>
-            </div>
-            {error && <p className="profile-error">{error}</p>}
-          </form>
-        )}
-
-        {passwordAction === "remove" && (
-          <form className="room-settings-form" onSubmit={handleRemovePassword}>
-            <label className="room-settings-label">Confirm current password to disable</label>
-            <div className="room-settings-row">
-              <input
-                type="password"
-                value={removePasswordInput}
-                onChange={(e) => setRemovePasswordInput(e.target.value)}
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
                 placeholder="Current password"
                 required
                 autoFocus
               />
-              <button type="submit" disabled={removeStatus === "saving"}>
-                {removeStatus === "saving" ? "..." : "Confirm"}
-              </button>
-              <button type="button" onClick={() => setPasswordAction("idle")}>
-                Cancel
-              </button>
-            </div>
-            {removeError && <p className="profile-error">{removeError}</p>}
-          </form>
-        )}
-
-        {status === "done" && passwordAction === "idle" && (
-          <p className="room-settings-success">Password updated.</p>
-        )}
-
-        {currentHasPassword && passwordAction === "idle" && (
-          <button type="button" className="room-settings-link" onClick={() => setPasswordAction("change")}>
-            Change password
-          </button>
-        )}
-
-        {passwordAction === "change" && (
-          <form className="room-settings-form" onSubmit={handleSubmit}>
-            <label className="room-settings-label">Change password</label>
-            <input
-              type="password"
-              value={oldPassword}
-              onChange={(e) => setOldPassword(e.target.value)}
-              placeholder="Current password"
-              required
-              autoFocus
-            />
-            <div className="room-settings-row">
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="New password"
-                minLength={4}
-                required
-              />
-              <button type="submit" disabled={status === "saving"}>
-                {status === "saving" ? "..." : "Save"}
-              </button>
-              <button type="button" onClick={() => setPasswordAction("idle")}>
-                Cancel
-              </button>
-            </div>
-            {error && <p className="profile-error">{error}</p>}
-          </form>
-        )}
-      </SettingsSection>
+              <div className="room-settings-row">
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="New password"
+                  minLength={4}
+                  required
+                />
+                <button type="submit" disabled={status === "saving"}>
+                  {status === "saving" ? "..." : "Save"}
+                </button>
+                <button type="button" onClick={() => setPasswordAction("idle")}>
+                  Cancel
+                </button>
+              </div>
+              {error && <p className="profile-error">{error}</p>}
+            </form>
+          )}
+        </SettingsSection>
       )}
 
       {isCreator && (
-      <SettingsSection
-        title="Max people"
-        meta={`${currentCapacity} / ${MAX_ROOM_CAPACITY}`}
-        isOpen={openSection === "capacity"}
-        onToggle={() => toggleSection("capacity")}
-      >
-        <form className="room-settings-form" onSubmit={handleCapacitySubmit}>
-          <div className="room-settings-row">
-            <input
-              type="number"
-              min={1}
-              max={MAX_ROOM_CAPACITY}
-              value={capacityDraft}
-              onChange={(e) => setCapacityDraft(Number(e.target.value))}
-              required
-            />
-            <button type="submit" disabled={capacityStatus === "saving"}>
-              {capacityStatus === "saving" ? "..." : "Save"}
-            </button>
-          </div>
-          {capacityError && <p className="profile-error">{capacityError}</p>}
-          {capacityStatus === "done" && <p className="room-settings-success">Capacity updated.</p>}
-        </form>
-      </SettingsSection>
+        <SettingsSection
+          title="Max people"
+          meta={`${currentCapacity} / ${MAX_ROOM_CAPACITY}`}
+          isOpen={openSection === "capacity"}
+          onToggle={() => toggleSection("capacity")}
+        >
+          <form className="room-settings-form" onSubmit={handleCapacitySubmit}>
+            <div className="room-settings-row">
+              <input
+                type="number"
+                min={1}
+                max={MAX_ROOM_CAPACITY}
+                value={capacityDraft}
+                onChange={(e) => setCapacityDraft(Number(e.target.value))}
+                required
+              />
+              <button type="submit" disabled={capacityStatus === "saving"}>
+                {capacityStatus === "saving" ? "..." : "Save"}
+              </button>
+            </div>
+            {capacityError && <p className="profile-error">{capacityError}</p>}
+            {capacityStatus === "done" && <p className="room-settings-success">Capacity updated.</p>}
+          </form>
+        </SettingsSection>
       )}
 
       {canEditBackground && (

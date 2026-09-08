@@ -6,14 +6,16 @@ export type PanelKey =
   | "calendar"
   | "media"
   | "outfit"
-  | "people";
+  | "people"
+  | "prayer";
 
 interface SideNavProps {
   openPanels: Record<PanelKey, boolean>;
   onToggle: (panel: PanelKey) => void;
+  showPrayerButton?: boolean;
 }
 
-export function SideNav({ openPanels, onToggle }: SideNavProps) {
+export function SideNav({ openPanels, onToggle, showPrayerButton }: SideNavProps) {
   return (
     <div className="side-nav" onMouseDown={(e) => e.stopPropagation()}>
       <button
@@ -65,6 +67,15 @@ export function SideNav({ openPanels, onToggle }: SideNavProps) {
       >
         👕
       </button>
+      {showPrayerButton && (
+        <button
+          className={openPanels.prayer ? "active" : ""}
+          title="Prayer times"
+          onClick={() => onToggle("prayer")}
+        >
+          🕌
+        </button>
+      )}
     </div>
   );
 }

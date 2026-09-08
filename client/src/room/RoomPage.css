@@ -394,6 +394,24 @@
   font-family: "Courier New", monospace;
 }
 
+.prayer-method-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: #aaa;
+}
+
+.prayer-method-picker select {
+  background: #1e1e2e;
+  color: #eee;
+  border: 2px solid #0d0d14;
+  padding: 4px 6px;
+  font-family: "Courier New", monospace;
+  max-width: 60%;
+}
+
 .chat-overlay {
   position: absolute;
   left: 16px;
@@ -1105,60 +1123,6 @@
   cursor: pointer;
 }
 
-.chat-size-setting {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 10px;
-  margin-bottom: 10px;
-  background: #1e1e2e;
-  border: 2px solid #0d0d14;
-  flex-wrap: wrap;
-}
-
-.chat-size-setting-label {
-  font-size: 11px;
-  color: #aaa;
-}
-
-.chat-size-setting-options {
-  display: flex;
-  gap: 4px;
-}
-
-.chat-size-setting-options button {
-  padding: 5px 8px;
-  background: #2a2a3d;
-  color: #ccc;
-  font-size: 10px;
-}
-
-.chat-size-setting-options button.active {
-  background: #4ade80;
-  color: #111;
-}
-
-.room-settings-link {
-  align-self: flex-start;
-  padding: 0;
-  background: none;
-  border: none;
-  box-shadow: none;
-  color: #4ade80;
-  font-size: 11px;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.room-settings-form input[type="file"] {
-  padding: 6px 0;
-  border: none !important;
-  background: none;
-  color: #eee;
-  font-size: 11px;
-}
-
 .room-settings-section {
   border-bottom: 1px solid #0d0d14;
 }
@@ -1184,15 +1148,6 @@
 
 .room-settings-section-header:hover {
   color: #4ade80;
-}
-
-.room-settings-section-header-static {
-  cursor: default;
-  padding-left: 12px;
-}
-
-.room-settings-section-header-static:hover {
-  color: #eee;
 }
 
 .room-settings-section-chevron {
@@ -1226,6 +1181,45 @@
   flex-direction: column;
   gap: 8px;
   padding: 2px 2px 12px;
+}
+
+.chat-size-options {
+  display: flex;
+  gap: 4px;
+}
+
+.chat-size-options button {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 4px;
+  background: #2a2a3d;
+  color: #ccc;
+  font-size: 10px;
+}
+
+.chat-size-options button.active {
+  background: #4ade80;
+  color: #111;
+}
+
+.room-settings-link {
+  align-self: flex-start;
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+  color: #4ade80;
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.room-settings-form input[type="file"] {
+  padding: 6px 0;
+  border: none !important;
+  background: none;
+  color: #eee;
+  font-size: 11px;
 }
 
 .calendar-panel {
@@ -1642,4 +1636,141 @@
 .celebration-subtitle {
   font-size: 11px;
   color: #ccc;
+}
+
+.prayer-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prayer-next {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px;
+  background: #1e1e2e;
+  border: 2px solid #0d0d14;
+}
+
+.prayer-next-label {
+  font-size: 10px;
+  color: #888;
+}
+
+.prayer-next-name {
+  font-family: "Press Start 2P", "Courier New", monospace;
+  font-size: 13px;
+  color: #4ade80;
+}
+
+.prayer-next-time {
+  margin-left: auto;
+  font-size: 12px;
+  color: #ccc;
+}
+
+.prayer-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prayer-checklist li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  background: #1e1e2e;
+  border: 1px solid #0d0d14;
+  font-size: 12px;
+}
+
+.prayer-checklist li.done .prayer-checklist-name {
+  color: #888;
+  text-decoration: line-through;
+}
+
+.prayer-checklist li.skipped {
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+.prayer-checklist li.skipped .prayer-checklist-name {
+  color: #f87171;
+}
+
+.prayer-checklist-skipped {
+  font-size: 12px;
+}
+
+.prayer-checklist li label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.prayer-checklist-time {
+  color: #888;
+  font-size: 11px;
+}
+
+.prayer-reminder-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 13, 20, 0.9);
+}
+
+.prayer-reminder-card {
+  text-align: center;
+  background: #2a2a3d;
+  border: 3px solid #4ade80;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.5);
+  padding: 32px 40px;
+  max-width: 90vw;
+}
+
+.prayer-reminder-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.prayer-reminder-card h2 {
+  margin: 0 0 10px;
+  font-family: "Press Start 2P", "Courier New", monospace;
+  font-size: 15px;
+  color: #eee;
+}
+
+.prayer-reminder-card p {
+  max-width: 320px;
+  margin: 0 auto 20px;
+}
+
+.prayer-reminder-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.prayer-reminder-confirm {
+  padding: 10px 20px;
+  background: #4ade80;
+  color: #111;
+  font-size: 13px;
+}
+
+.prayer-reminder-skip {
+  padding: 10px 16px;
+  background: #1e1e2e;
+  color: #aaa;
+  font-size: 13px;
 }

@@ -1,3 +1,4 @@
+import { SettingsSection } from "./SettingsSection";
 import type { ChatSize } from "./useChatSizePreference";
 
 interface ChatSizeSettingProps {
@@ -12,10 +13,10 @@ const OPTIONS: Array<{ value: ChatSize; label: string }> = [
 ];
 
 export function ChatSizeSetting({ chatSize, onChange }: ChatSizeSettingProps) {
+  const currentLabel = OPTIONS.find((opt) => opt.value === chatSize)?.label ?? "";
   return (
-    <div className="chat-size-setting">
-      <span className="chat-size-setting-label">Chat text size</span>
-      <div className="chat-size-setting-options">
+    <SettingsSection title="Chat text size" meta={currentLabel}>
+      <div className="chat-size-options">
         {OPTIONS.map((opt) => (
           <button
             key={opt.value}
@@ -27,6 +28,6 @@ export function ChatSizeSetting({ chatSize, onChange }: ChatSizeSettingProps) {
           </button>
         ))}
       </div>
-    </div>
+    </SettingsSection>
   );
 }

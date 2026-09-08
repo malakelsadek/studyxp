@@ -20,6 +20,11 @@ import { useTimerAutoBreakPreference } from "./useTimerAutoBreakPreference";
 import { useChatSizePreference } from "./useChatSizePreference";
 import { ChatSizeSetting } from "./ChatSizeSetting";
 import { NameColorSetting } from "./NameColorSetting";
+import { usePrayerTimesPreference } from "./usePrayerTimesPreference";
+import { usePrayerReminder } from "./usePrayerReminder";
+import { PrayerTimesSetting } from "./PrayerTimesSetting";
+import { PrayerTimesTile } from "./PrayerTimesTile";
+import { PrayerReminderOverlay } from "./PrayerReminderOverlay";
 import { useTimerCompletionSound } from "./useTimerCompletionSound";
 import { useAllTasksCelebration } from "./useAllTasksCelebration";
 import { playPartySound } from "./timerSounds";
@@ -41,6 +46,7 @@ export function RoomPage() {
     media: false,
     outfit: false,
     people: false,
+    prayer: false,
   });
   const [mediaTab, setMediaTab] = useState<MediaTab>("youtube");
   const [chatActive, setChatActive] = useState(false);
@@ -118,7 +124,29 @@ export function RoomPage() {
     leaveRoom,
   } = useRoomState(roomId);
 
-  const chatLocked = disableChatDuringSharedTimer && timer.status === "running";
+  const {
+    enabled: prayerEnabled,
+    setEnabled: setPrayerEnabled,
+    method: prayerMethod,
+    setMethod: setPrayerMethod,
+    madhab: prayerMadhab,
+    setMadhab: setPrayerMadhab,
+    coordinates: prayerCoordinates,
+    requestLocation: requestPrayerLocation,
+    locating: prayerLocating,
+    locationError: prayerLocationError,
+  } = usePrayerTimesPreference();
+
+  const {
+    checklist: prayerChecklist,
+    duePrayer,
+    nextPrayer: nextPrayerTime,
+    markPrayed,
+    skipPrayer,
+    unmarkPrayed,
+  } = usePrayerReminder(prayerEnabled, prayerCoordinates, prayerMethod, prayerMadhab);
+
+  const chatLocked = (disableChatDuringSharedTimer && timer.status === "running") || !!duePrayer;
 
   useEffect(() => {
     if (chatLocked) setChatActive(false);
@@ -146,6 +174,8 @@ export function RoomPage() {
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (duePrayer) return;
+
       if (e.key === "Escape" && chatActive) {
         e.preventDefault();
         setChatActive(false);
@@ -197,7 +227,7 @@ export function RoomPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [chatActive, chatLocked]);
+  }, [chatActive, chatLocked, duePrayer]);
 
   const handleSendChat = (text: string) => {
     if (chatLocked) return;
@@ -218,6 +248,15 @@ export function RoomPage() {
   const { soundId, setSoundId, play: playTimerDoneSound } = useTimerSoundPreference();
   const { autoBreak, setAutoBreak } = useTimerAutoBreakPreference();
   const { chatSize, setChatSize } = useChatSizePreference();
+
+  useEffect(() => {
+    // Only the local user's own personal timer is paused — the shared room timer keeps
+    // running for everyone else, since prayer reminders are a personal, opt-in feature.
+    if (duePrayer && personalTimerState.status === "running") {
+      pausePersonalTimer();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [duePrayer]);
 
   useStudySessionLogger(timer, roomId, token, logStudyTime, setCoins);
   useStudySessionLogger(personalTimer.timer, roomId, token, logStudyTime, setCoins);
@@ -387,6 +426,18 @@ export function RoomPage() {
           >
             <ChatSizeSetting chatSize={chatSize} onChange={setChatSize} />
             <NameColorSetting currentNameColor={user.nameColor} />
+            <PrayerTimesSetting
+              enabled={prayerEnabled}
+              onEnabledChange={setPrayerEnabled}
+              method={prayerMethod}
+              onMethodChange={setPrayerMethod}
+              madhab={prayerMadhab}
+              onMadhabChange={setPrayerMadhab}
+              hasCoordinates={!!prayerCoordinates}
+              locating={prayerLocating}
+              locationError={prayerLocationError}
+              onRequestLocation={requestPrayerLocation}
+            />
             <RoomSettings
               roomId={roomId}
               token={token}
@@ -463,6 +514,28 @@ export function RoomPage() {
           </Tile>
         )}
 
+        {prayerEnabled && openPanels.prayer && (
+          <Tile
+            title="Prayer"
+            initialPosition={{ x: 480, y: 448 }}
+            onClose={() => togglePanel("prayer")}
+            width={240}
+            resizable
+            minWidth={240}
+            maxWidth={400}
+          >
+            <PrayerTimesTile
+              hasCoordinates={!!prayerCoordinates}
+              locating={prayerLocating}
+              locationError={prayerLocationError}
+              onRequestLocation={requestPrayerLocation}
+              checklist={prayerChecklist}
+              nextPrayer={nextPrayerTime}
+              onTogglePrayed={(name, prayed) => (prayed ? markPrayed(name) : unmarkPrayed(name))}
+            />
+          </Tile>
+        )}
+
         {showLeaderboard && (
           <Tile
             title="Leaderboard"
@@ -483,9 +556,17 @@ export function RoomPage() {
           size={chatSize}
         />
 
-        <SideNav openPanels={openPanels} onToggle={togglePanel} />
+        <SideNav openPanels={openPanels} onToggle={togglePanel} showPrayerButton={prayerEnabled} />
 
         {showCelebration && <CelebrationPopup onDismiss={() => setShowCelebration(false)} />}
+
+        {duePrayer && (
+          <PrayerReminderOverlay
+            prayerName={duePrayer.name}
+            onMarkPrayed={() => markPrayed(duePrayer.name)}
+            onSkip={() => skipPrayer(duePrayer.name)}
+          />
+        )}
 
         {viewingProfileId && viewingPlayer && (
           <ProfileModal
