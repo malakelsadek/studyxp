@@ -14,6 +14,7 @@ interface TimerPanelProps {
   onSoundChange: (id: string) => void;
   autoBreak: boolean;
   onAutoBreakChange: (value: boolean) => void;
+  canControl?: boolean;
 }
 
 export function TimerPanel({
@@ -27,6 +28,7 @@ export function TimerPanel({
   onSoundChange,
   autoBreak,
   onAutoBreakChange,
+  canControl = true,
 }: TimerPanelProps) {
   const [, forceTick] = useState(0);
   const [showMore, setShowMore] = useState(false);
@@ -59,15 +61,43 @@ export function TimerPanel({
       </div>
       <div className="timer-controls">
         {timer.status !== "running" ? (
-          <button onClick={() => onStart(timer.mode)}>Start</button>
+          <button
+            disabled={!canControl}
+            onClick={(e) => {
+              onStart(timer.mode);
+              e.currentTarget.blur();
+            }}
+          >
+            Start
+          </button>
         ) : (
-          <button onClick={onPause}>Pause</button>
+          <button
+            disabled={!canControl}
+            onClick={(e) => {
+              onPause();
+              e.currentTarget.blur();
+            }}
+          >
+            Pause
+          </button>
         )}
-        <button onClick={onReset}>Reset</button>
+        <button
+          disabled={!canControl}
+          onClick={(e) => {
+            onReset();
+            e.currentTarget.blur();
+          }}
+        >
+          Reset
+        </button>
         <button type="button" className="timer-more-toggle" onClick={() => setShowMore((v) => !v)}>
           {showMore ? "▲ Less" : "▾ More"}
         </button>
       </div>
+
+      {!canControl && (
+        <p className="profile-muted timer-restricted-note">Only the room creator can control this timer.</p>
+      )}
 
       {showMore && (
         <div className="timer-more">

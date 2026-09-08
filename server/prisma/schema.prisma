@@ -17,6 +17,7 @@ model User {
   character              String          @default("char-1")
   ownedCharacters        String[]        @default(["char-1", "char-2"])
   nameColor              String?
+  country                String?
   coins                  Int             @default(0)
   studyMsBanked          Int             @default(0)
   tasksCompleted         Int             @default(0)
@@ -62,6 +63,8 @@ model Room {
   creator                        User?    @relation("RoomCreator", fields: [creatorId], references: [id], onDelete: SetNull)
   allowNameChangeByMembers       Boolean  @default(false)
   allowBackgroundChangeByMembers Boolean  @default(false)
+  disableChatDuringSharedTimer   Boolean  @default(false)
+  restrictTimerControlToCreator  Boolean  @default(false)
 }
 
 model StudySession {

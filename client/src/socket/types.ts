@@ -27,6 +27,7 @@ export interface ChatMessage {
   fromId: string;
   from: string;
   nameColor: string | null;
+  country: string | null;
   text: string;
   at: number;
 }
@@ -92,6 +93,8 @@ export interface RoomSnapshot {
   creatorId: string | null;
   allowNameChangeByMembers: boolean;
   allowBackgroundChangeByMembers: boolean;
+  disableChatDuringSharedTimer: boolean;
+  restrictTimerControlToCreator: boolean;
   selfProfile: SelfProfile | null;
 }
 
@@ -100,6 +103,7 @@ export interface ClientToServerEvents {
   "room:leave": () => void;
   "player:move": (payload: { x: number; y: number }) => void;
   "chat:send": (payload: { text: string }) => void;
+  "chat:typing": (payload: { typing: boolean }) => void;
   "timer:start": (payload: { mode: TimerMode }) => void;
   "timer:pause": () => void;
   "timer:reset": () => void;
@@ -127,6 +131,8 @@ export interface ClientToServerEvents {
   "room:permissions": (payload: {
     allowNameChangeByMembers: boolean;
     allowBackgroundChangeByMembers: boolean;
+    disableChatDuringSharedTimer: boolean;
+    restrictTimerControlToCreator: boolean;
   }) => void;
   "room:music": (payload: { kind: "youtube" | "spotify"; url: string | null }) => void;
   "study:log": (payload: { durationMs: number }) => void;
@@ -162,6 +168,7 @@ export interface ServerToClientEvents {
   "player:left": (payload: { id: string }) => void;
   "player:moved": (payload: { id: string; x: number; y: number }) => void;
   "chat:message": (payload: ChatMessage) => void;
+  "player:typing": (payload: { id: string; typing: boolean }) => void;
   "timer:update": (payload: TimerState) => void;
   "todo:update": (payload: { todos: TodoItem[] }) => void;
   "personal:update": (payload: { ownerId: string; todos: PersonalTodoItem[] }) => void;
@@ -170,6 +177,8 @@ export interface ServerToClientEvents {
   "room:permissions": (payload: {
     allowNameChangeByMembers: boolean;
     allowBackgroundChangeByMembers: boolean;
+    disableChatDuringSharedTimer: boolean;
+    restrictTimerControlToCreator: boolean;
   }) => void;
   "room:music": (payload: { kind: "youtube" | "spotify"; url: string | null }) => void;
   "leaderboard:update": (payload: { leaderboard: LeaderboardEntry[] }) => void;

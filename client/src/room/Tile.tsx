@@ -1,5 +1,11 @@
 import { useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 
+// Keeps dragged tiles from being moved up underneath the topbar (RoomPage.css .room-topbar height).
+const TOPBAR_HEIGHT = 46;
+
+// Shared across all tiles so clicking one always raises it above every other open tile.
+let highestTileZIndex = 20;
+
 interface TileProps {
   title: string;
   initialPosition: { x: number; y: number };
@@ -27,7 +33,14 @@ export function Tile({
   minHeight = 160,
   maxHeight = 720,
 }: TileProps) {
-  const [position, setPosition] = useState(initialPosition);
+  const [position, setPosition] = useState(() => ({
+    x: initialPosition.x,
+    y: Math.max(TOPBAR_HEIGHT, initialPosition.y),
+  }));
+  const [minimized, setMinimized] = useState(false);
+  const [zIndex, setZIndex] = useState(() => ++highestTileZIndex);
+
+  const bringToFront = () => setZIndex(++highestTileZIndex);
   const [size, setSize] = useState<{ width: number; height: number | undefined }>({
     width: width ?? 280,
     height: undefined,
@@ -52,7 +65,10 @@ export function Tile({
       if (!dragState.current) return;
       const dx = moveEvent.clientX - dragState.current.startX;
       const dy = moveEvent.clientY - dragState.current.startY;
-      setPosition({ x: dragState.current.originX + dx, y: dragState.current.originY + dy });
+      setPosition({
+        x: dragState.current.originX + dx,
+        y: Math.max(TOPBAR_HEIGHT, dragState.current.originY + dy),
+      });
     };
 
     const handleMouseUp = () => {
@@ -96,22 +112,41 @@ export function Tile({
   return (
     <div
       ref={tileRef}
-      className="tile"
+      className={`tile${minimized ? " tile--minimized" : ""}`}
       style={{
         left: position.x,
         top: position.y,
         width: resizable ? size.width : width,
-        height: resizable ? size.height : undefined,
+        height: minimized ? undefined : resizable ? size.height : undefined,
+        zIndex,
+      }}
+      onMouseDown={(e) => {
+        // Stops the click from also reaching the game canvas underneath (which would
+        // otherwise open a player's profile if their sprite happens to be behind the tile).
+        e.stopPropagation();
+        bringToFront();
       }}
     >
-      <div className="tile-header" onMouseDown={handleMouseDown}>
+      <div className="tile-header" onMouseDown={handleMouseDown} onDoubleClick={() => setMinimized((prev) => !prev)}>
         <span>{title}</span>
-        <button onClick={onClose} aria-label={`Close ${title}`}>
-          ×
-        </button>
+        <div className="tile-header-actions">
+          <button
+            onClick={() => setMinimized((prev) => !prev)}
+            aria-label={minimized ? `Restore ${title}` : `Minimize ${title}`}
+          >
+            {minimized ? "▢" : "─"}
+          </button>
+          <button onClick={onClose} aria-label={`Close ${title}`}>
+            ×
+          </button>
+        </div>
       </div>
-      <div className="tile-body">{children}</div>
-      {resizable && (
+      {/* Hidden via CSS rather than unmounted so embeds (YouTube/Spotify) keep playing
+          in the background, and other tiles keep their scroll/form state, while minimized. */}
+      <div className="tile-body" hidden={minimized}>
+        {children}
+      </div>
+      {!minimized && resizable && (
         <div className="tile-resize-handle" onMouseDown={handleResizeMouseDown} aria-hidden="true" />
       )}
     </div>

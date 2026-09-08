@@ -99,6 +99,8 @@ export interface RoomDbMeta {
   creatorId: string | null;
   allowNameChangeByMembers: boolean;
   allowBackgroundChangeByMembers: boolean;
+  disableChatDuringSharedTimer: boolean;
+  restrictTimerControlToCreator: boolean;
 }
 
 function visiblePersonalTodos(room: RoomState, viewerId: string): Record<string, PersonalTodoItem[]> {
@@ -137,6 +139,8 @@ function toSnapshot(
     creatorId: dbMeta.creatorId,
     allowNameChangeByMembers: dbMeta.allowNameChangeByMembers,
     allowBackgroundChangeByMembers: dbMeta.allowBackgroundChangeByMembers,
+    disableChatDuringSharedTimer: dbMeta.disableChatDuringSharedTimer,
+    restrictTimerControlToCreator: dbMeta.restrictTimerControlToCreator,
     selfProfile,
   };
 }
@@ -218,6 +222,7 @@ export function addChatMessage(
   fromId: string,
   from: string,
   nameColor: string | null,
+  country: string | null,
   text: string,
 ): ChatMessage | null {
   const room = rooms.get(roomId);
@@ -227,6 +232,7 @@ export function addChatMessage(
     fromId,
     from,
     nameColor,
+    country,
     text,
     at: Date.now(),
   };
@@ -242,6 +248,10 @@ function computeElapsed(timer: TimerState): number {
     return timer.elapsedMsAtStart + (Date.now() - timer.startedAt);
   }
   return timer.elapsedMsAtStart;
+}
+
+export function isSharedTimerRunning(roomId: string): boolean {
+  return rooms.get(roomId)?.timer.status === "running";
 }
 
 export function startTimer(roomId: string, mode: TimerMode): TimerState | null {

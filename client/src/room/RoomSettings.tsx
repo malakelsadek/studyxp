@@ -10,7 +10,7 @@ import {
   uploadRoomBackground,
 } from "../lib/api";
 
-type SectionKey = "name" | "password" | "capacity" | "background" | "permissions";
+type SectionKey = "name" | "password" | "capacity" | "background" | "permissions" | "chat" | "timerControl";
 
 interface RoomSettingsProps {
   roomId: string;
@@ -27,7 +27,14 @@ interface RoomSettingsProps {
   onHasPasswordChange: (hasPassword: boolean) => void;
   allowNameChangeByMembers: boolean;
   allowBackgroundChangeByMembers: boolean;
-  onPermissionsChange: (next: { allowNameChangeByMembers: boolean; allowBackgroundChangeByMembers: boolean }) => void;
+  disableChatDuringSharedTimer: boolean;
+  restrictTimerControlToCreator: boolean;
+  onPermissionsChange: (next: {
+    allowNameChangeByMembers: boolean;
+    allowBackgroundChangeByMembers: boolean;
+    disableChatDuringSharedTimer: boolean;
+    restrictTimerControlToCreator: boolean;
+  }) => void;
 }
 
 function roomPasswordKey(roomId: string) {
@@ -74,6 +81,8 @@ export function RoomSettings({
   onHasPasswordChange,
   allowNameChangeByMembers,
   allowBackgroundChangeByMembers,
+  disableChatDuringSharedTimer,
+  restrictTimerControlToCreator,
   onPermissionsChange,
 }: RoomSettingsProps) {
   const isCreator = !!currentUserId && currentUserId === creatorId;
@@ -110,12 +119,20 @@ export function RoomSettings({
     return <p className="profile-muted">Only the room creator can change room settings.</p>;
   }
 
-  const handlePermissionToggle = async (field: "allowNameChangeByMembers" | "allowBackgroundChangeByMembers") => {
-    const next = {
+  const handlePermissionToggle = async (
+    field:
+      | "allowNameChangeByMembers"
+      | "allowBackgroundChangeByMembers"
+      | "disableChatDuringSharedTimer"
+      | "restrictTimerControlToCreator",
+  ) => {
+    const current = {
       allowNameChangeByMembers,
       allowBackgroundChangeByMembers,
-      [field]: field === "allowNameChangeByMembers" ? !allowNameChangeByMembers : !allowBackgroundChangeByMembers,
+      disableChatDuringSharedTimer,
+      restrictTimerControlToCreator,
     };
+    const next = { ...current, [field]: !current[field] };
     setPermissionsStatus("saving");
     setPermissionsError(null);
     try {
@@ -464,6 +481,52 @@ export function RoomSettings({
             />
             Room background
           </label>
+          {permissionsError && <p className="profile-error">{permissionsError}</p>}
+        </SettingsSection>
+      )}
+
+      {isCreator && (
+        <SettingsSection
+          title="Chat"
+          meta={disableChatDuringSharedTimer ? "Paused during timer" : "Always on"}
+          isOpen={openSection === "chat"}
+          onToggle={() => toggleSection("chat")}
+        >
+          <label className="room-settings-toggle">
+            <input
+              type="checkbox"
+              checked={disableChatDuringSharedTimer}
+              disabled={permissionsStatus === "saving"}
+              onChange={() => handlePermissionToggle("disableChatDuringSharedTimer")}
+            />
+            Disable chat while the shared timer is running
+          </label>
+          <p className="profile-muted">Everyone's chat locks automatically whenever the shared study timer is active.</p>
+          {permissionsError && <p className="profile-error">{permissionsError}</p>}
+        </SettingsSection>
+      )}
+
+      {isCreator && (
+        <SettingsSection
+          title="Shared timer control"
+          meta={restrictTimerControlToCreator ? "Creator only" : "Everyone"}
+          isOpen={openSection === "timerControl"}
+          onToggle={() => toggleSection("timerControl")}
+        >
+          <label className="room-settings-toggle">
+            <input
+              type="checkbox"
+              checked={restrictTimerControlToCreator}
+              disabled={permissionsStatus === "saving"}
+              onChange={() => handlePermissionToggle("restrictTimerControlToCreator")}
+            />
+            Only the room creator can start/pause/reset the shared timer
+          </label>
+          <p className="profile-muted">
+            {restrictTimerControlToCreator
+              ? "Members can view the shared timer but can't start, pause, or reset it."
+              : "Anyone in the room can start, pause, or reset the shared timer."}
+          </p>
           {permissionsError && <p className="profile-error">{permissionsError}</p>}
         </SettingsSection>
       )}

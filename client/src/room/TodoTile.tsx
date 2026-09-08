@@ -80,26 +80,21 @@ export function TodoTile({
           <button
             className={tab === "shared" ? "active" : ""}
             onClick={() => setTab("shared")}
-            title="Shared tasks"
-            aria-label="Shared tasks"
           >
-            📋
+            Shared
           </button>
           <button
             className={tab === "personal" ? "active" : ""}
             onClick={() => setTab("personal")}
-            title="Personal tasks"
-            aria-label="Personal tasks"
           >
-            👤
+            Personal
           </button>
           <button
             className={peopleOpen ? "active" : ""}
             onClick={onOpenPeople}
-            title="People progress (Alt+P)"
-            aria-label="People progress"
+            title="Alt+P"
           >
-            👥
+            People
           </button>
         </div>
 

@@ -15,6 +15,7 @@ interface TimerControls {
 interface TimerTileProps {
   shared: TimerControls;
   personal: TimerControls;
+  sharedControlAllowed: boolean;
   soundId: string;
   onSoundChange: (id: string) => void;
   autoBreak: boolean;
@@ -24,6 +25,7 @@ interface TimerTileProps {
 export function TimerTile({
   shared,
   personal,
+  sharedControlAllowed,
   soundId,
   onSoundChange,
   autoBreak,
@@ -46,6 +48,7 @@ export function TimerTile({
         onSoundChange={onSoundChange}
         autoBreak={autoBreak}
         onAutoBreakChange={onAutoBreakChange}
+        canControl={mode === "personal" || sharedControlAllowed}
       />
     </div>
   );

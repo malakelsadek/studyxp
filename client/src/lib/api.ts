@@ -38,6 +38,7 @@ export interface UserProfile {
   tasksCompleted: number;
   createdAt: string;
   nameColor: string | null;
+  country: string | null;
   stats: UserStats;
 }
 
@@ -125,6 +126,7 @@ export function updateProfile(
     interests?: string[];
     character?: string;
     nameColor?: string | null;
+    country?: string | null;
   },
 ) {
   return patchJson<UserProfile>("/users/me", updates, token);
@@ -188,13 +190,19 @@ export function changeRoomName(token: string, roomId: string, name: string) {
 export function changeRoomPermissions(
   token: string,
   roomId: string,
-  updates: { allowNameChangeByMembers?: boolean; allowBackgroundChangeByMembers?: boolean },
+  updates: {
+    allowNameChangeByMembers?: boolean;
+    allowBackgroundChangeByMembers?: boolean;
+    disableChatDuringSharedTimer?: boolean;
+    restrictTimerControlToCreator?: boolean;
+  },
 ) {
-  return patchJson<{ allowNameChangeByMembers: boolean; allowBackgroundChangeByMembers: boolean }>(
-    `/rooms/${roomId}/permissions`,
-    updates,
-    token,
-  );
+  return patchJson<{
+    allowNameChangeByMembers: boolean;
+    allowBackgroundChangeByMembers: boolean;
+    disableChatDuringSharedTimer: boolean;
+    restrictTimerControlToCreator: boolean;
+  }>(`/rooms/${roomId}/permissions`, updates, token);
 }
 
 export interface Friend {

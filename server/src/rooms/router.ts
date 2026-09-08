@@ -184,6 +184,8 @@ roomsRouter.delete("/:id/background", requireRoomEditPermission("background"), a
 const changePermissionsSchema = z.object({
   allowNameChangeByMembers: z.boolean().optional(),
   allowBackgroundChangeByMembers: z.boolean().optional(),
+  disableChatDuringSharedTimer: z.boolean().optional(),
+  restrictTimerControlToCreator: z.boolean().optional(),
 });
 
 roomsRouter.patch("/:id/permissions", requireRoomCreator, async (req, res) => {
@@ -195,7 +197,12 @@ roomsRouter.patch("/:id/permissions", requireRoomCreator, async (req, res) => {
   const room = await prisma.room.update({
     where: { id: req.params.id },
     data: parsed.data,
-    select: { allowNameChangeByMembers: true, allowBackgroundChangeByMembers: true },
+    select: {
+      allowNameChangeByMembers: true,
+      allowBackgroundChangeByMembers: true,
+      disableChatDuringSharedTimer: true,
+      restrictTimerControlToCreator: true,
+    },
   });
   res.json(room);
 });

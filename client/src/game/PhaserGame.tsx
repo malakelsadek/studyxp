@@ -10,6 +10,7 @@ interface PhaserGameProps {
   selfCharacter: string;
   backgroundUrl: string | null;
   messages: ChatMessage[];
+  typingPlayerIds: Set<string>;
   onLocalMove: (x: number, y: number) => void;
   onPlayerClick: (id: string) => void;
 }
@@ -25,6 +26,7 @@ export const PhaserGame = forwardRef<PhaserGameHandle, PhaserGameProps>(function
   selfCharacter,
   backgroundUrl,
   messages,
+  typingPlayerIds,
   onLocalMove,
   onPlayerClick,
 }, ref) {
@@ -100,6 +102,18 @@ export const PhaserGame = forwardRef<PhaserGameHandle, PhaserGameProps>(function
   useEffect(() => {
     sceneRef.current?.syncPlayers(players);
   }, [players]);
+
+  const prevTypingRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const prev = prevTypingRef.current;
+    for (const id of typingPlayerIds) {
+      if (!prev.has(id)) sceneRef.current?.setTyping(id, true);
+    }
+    for (const id of prev) {
+      if (!typingPlayerIds.has(id)) sceneRef.current?.setTyping(id, false);
+    }
+    prevTypingRef.current = typingPlayerIds;
+  }, [typingPlayerIds]);
 
   useEffect(() => {
     sceneRef.current?.setBackground(backgroundUrl);

@@ -1,4 +1,5 @@
 import { useRef, useState, type DragEvent, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import type { PlayerDTO, TodoItem } from "../socket/types";
 import { formatDurationLong } from "./timerMath";
 
@@ -134,7 +135,6 @@ export function TodoList({
               onDrop={handleDrop(todo.id)}
             >
               <div className="todo-item-main">
-                <span className="todo-drag-handle">⠿</span>
                 <input
                   type="checkbox"
                   checked={todo.done}
@@ -190,8 +190,9 @@ export function TodoList({
         + Add task
       </button>
 
-      {modalOpen && (
-        <div className="todo-add-modal-backdrop" onClick={closeModal}>
+      {modalOpen &&
+        createPortal(
+          <div className="todo-add-modal-backdrop" onClick={closeModal}>
           <div className="todo-add-modal" onClick={(e) => e.stopPropagation()}>
             <h3>{editingTodo ? "Edit task" : "Add task"}</h3>
             <form onSubmit={handleSubmit} className="todo-add-form">
@@ -245,8 +246,9 @@ export function TodoList({
               </div>
             </form>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body,
+        )}
     </div>
   );
 }

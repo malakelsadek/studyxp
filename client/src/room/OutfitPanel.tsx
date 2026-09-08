@@ -1,17 +1,13 @@
 import { CHARACTER_PRESETS } from "../game/characterPresets";
 import { CharacterPreview } from "../game/CharacterPreview";
 import { useCharacterEquip } from "../game/useCharacterEquip";
-import { useNameColorEquip } from "../game/useNameColorEquip";
-import { USER_COLOR_PALETTE } from "../lib/userColor";
 
 interface OutfitPanelProps {
   currentCharacter: string;
-  currentNameColor: string | null;
 }
 
-export function OutfitPanel({ currentCharacter, currentNameColor }: OutfitPanelProps) {
+export function OutfitPanel({ currentCharacter }: OutfitPanelProps) {
   const equipCharacter = useCharacterEquip();
-  const equipNameColor = useNameColorEquip();
 
   return (
     <div className="outfit-grid-scroll">
@@ -30,26 +26,6 @@ export function OutfitPanel({ currentCharacter, currentNameColor }: OutfitPanelP
             </button>
           );
         })}
-      </div>
-
-      <h3 className="outfit-section-title">Name color</h3>
-      <div className="namecolor-picker">
-        <button
-          type="button"
-          className={`namecolor-swatch namecolor-swatch-default ${currentNameColor === null ? "selected" : ""}`}
-          onClick={() => equipNameColor(null)}
-          title="Default"
-        />
-        {USER_COLOR_PALETTE.map((color) => (
-          <button
-            key={color}
-            type="button"
-            className={`namecolor-swatch ${currentNameColor === color ? "selected" : ""}`}
-            style={{ backgroundColor: color }}
-            onClick={() => equipNameColor(color)}
-            title={color}
-          />
-        ))}
       </div>
     </div>
   );

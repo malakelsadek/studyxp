@@ -12,6 +12,10 @@ export const NAME_COLOR_PALETTE = [
   "#facc15",
 ] as const;
 
+const HEX_COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
+
+// Any valid hex color is accepted (not just the preset palette) so a color-wheel
+// pick persists — it's a cosmetic display color with no security implication.
 export function isValidNameColor(color: unknown): color is string {
-  return typeof color === "string" && (NAME_COLOR_PALETTE as readonly string[]).includes(color);
+  return typeof color === "string" && HEX_COLOR_PATTERN.test(color);
 }

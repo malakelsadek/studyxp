@@ -53,6 +53,7 @@ function parseSpotifyEmbed(raw: string): ParsedSpotifyEmbed | null {
 export function SpotifyPanel({ url, onSetUrl, canEdit }: SpotifyPanelProps) {
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showHint, setShowHint] = useState(false);
   const parsed = url ? parseSpotifyEmbed(url) : null;
 
   const handleSubmit = (e: FormEvent) => {
@@ -95,11 +96,20 @@ export function SpotifyPanel({ url, onSetUrl, canEdit }: SpotifyPanelProps) {
             />
             <button type="submit">Play</button>
           </form>
-          <p className="profile-muted spotify-hint">
-            Playlists and albums only preview 30s per track unless you're logged into Spotify Premium in this
-            browser. Other people in the room may need to press play on the embed themselves — browsers only
-            autoplay audio for whoever set the link.
-          </p>
+          <button
+            type="button"
+            className="spotify-hint-toggle"
+            onClick={() => setShowHint((v) => !v)}
+          >
+            {showHint ? "▾" : "▸"} About playback limits
+          </button>
+          {showHint && (
+            <p className="profile-muted spotify-hint">
+              Playlists and albums only preview 30s per track unless you're logged into Spotify Premium in this
+              browser. Other people in the room may need to press play on the embed themselves — browsers only
+              autoplay audio for whoever set the link.
+            </p>
+          )}
         </>
       ) : (
         <p className="profile-muted">Sign up to change the room's music.</p>

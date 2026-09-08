@@ -20,6 +20,7 @@ import {
   editTodo,
   getPlayerCount,
   getPlayerDisplayName,
+  isSharedTimerRunning,
   joinRoom,
   leaveRoom,
   logStudyTime,
@@ -156,6 +157,7 @@ export function registerSocketHandlers(io: AppServer) {
           ownedCharacters: user.ownedCharacters,
           coins: user.coins,
           nameColor: sanitizeNameColor(user.nameColor),
+          country: user.country,
         };
       } else if (guestName && guestName.trim().length > 0) {
         socket.data.user = {
@@ -167,6 +169,7 @@ export function registerSocketHandlers(io: AppServer) {
           ownedCharacters: ALL_CHARACTER_IDS,
           coins: 0,
           nameColor: sanitizeNameColor(nameColor),
+          country: null,
         };
       } else {
         return next(new Error("authentication required"));
@@ -225,6 +228,8 @@ export function registerSocketHandlers(io: AppServer) {
           creatorId: room.creatorId,
           allowNameChangeByMembers: room.allowNameChangeByMembers,
           allowBackgroundChangeByMembers: room.allowBackgroundChangeByMembers,
+          disableChatDuringSharedTimer: room.disableChatDuringSharedTimer,
+          restrictTimerControlToCreator: room.restrictTimerControlToCreator,
         },
         selfProfile,
       );
@@ -252,6 +257,16 @@ export function registerSocketHandlers(io: AppServer) {
       return kind === "name" ? room.allowNameChangeByMembers : room.allowBackgroundChangeByMembers;
     }
 
+    async function canControlSharedTimer(roomId: string, userId: string): Promise<boolean> {
+      const room = await prisma.room.findUnique({
+        where: { id: roomId },
+        select: { creatorId: true, restrictTimerControlToCreator: true },
+      });
+      if (!room) return false;
+      if (!room.restrictTimerControlToCreator) return true;
+      return room.creatorId === userId;
+    }
+
     socket.on("room:background", async ({ url }) => {
       const roomId = socket.data.roomId;
       if (!roomId || !(await canEditRoom(roomId, socket.data.user.id, "background"))) return;
@@ -267,13 +282,26 @@ export function registerSocketHandlers(io: AppServer) {
       io.to(roomId).emit("room:name", { name: trimmed });
     });
 
-    socket.on("room:permissions", async ({ allowNameChangeByMembers, allowBackgroundChangeByMembers }) => {
-      const roomId = socket.data.roomId;
-      if (!roomId) return;
-      const room = await prisma.room.findUnique({ where: { id: roomId }, select: { creatorId: true } });
-      if (!room || room.creatorId !== socket.data.user.id) return;
-      io.to(roomId).emit("room:permissions", { allowNameChangeByMembers, allowBackgroundChangeByMembers });
-    });
+    socket.on(
+      "room:permissions",
+      async ({
+        allowNameChangeByMembers,
+        allowBackgroundChangeByMembers,
+        disableChatDuringSharedTimer,
+        restrictTimerControlToCreator,
+      }) => {
+        const roomId = socket.data.roomId;
+        if (!roomId) return;
+        const room = await prisma.room.findUnique({ where: { id: roomId }, select: { creatorId: true } });
+        if (!room || room.creatorId !== socket.data.user.id) return;
+        io.to(roomId).emit("room:permissions", {
+          allowNameChangeByMembers,
+          allowBackgroundChangeByMembers,
+          disableChatDuringSharedTimer,
+          restrictTimerControlToCreator,
+        });
+      },
+    );
 
     socket.on("room:music", ({ kind, url }) => {
       const roomId = socket.data.roomId;
@@ -313,36 +341,50 @@ export function registerSocketHandlers(io: AppServer) {
       if (player) io.to(roomId).emit("player:nameColor", { id: player.id, nameColor: sanitized });
     });
 
-    socket.on("chat:send", ({ text }) => {
+    socket.on("chat:send", async ({ text }) => {
       const roomId = socket.data.roomId;
       if (!roomId || !text?.trim()) return;
+      if (isSharedTimerRunning(roomId)) {
+        const room = await prisma.room.findUnique({
+          where: { id: roomId },
+          select: { disableChatDuringSharedTimer: true },
+        });
+        if (room?.disableChatDuringSharedTimer) return;
+      }
       const message = addChatMessage(
         roomId,
         socket.data.user.id,
         socket.data.user.displayName,
         socket.data.user.nameColor,
+        socket.data.user.country,
         text.trim().slice(0, MAX_CHAT_LENGTH),
       );
       if (message) io.to(roomId).emit("chat:message", message);
     });
 
-    socket.on("timer:start", ({ mode }) => {
+    socket.on("chat:typing", ({ typing }) => {
       const roomId = socket.data.roomId;
       if (!roomId) return;
+      io.to(roomId).emit("player:typing", { id: socket.data.user.id, typing: !!typing });
+    });
+
+    socket.on("timer:start", async ({ mode }) => {
+      const roomId = socket.data.roomId;
+      if (!roomId || !(await canControlSharedTimer(roomId, socket.data.user.id))) return;
       const timer = startTimer(roomId, mode);
       if (timer) io.to(roomId).emit("timer:update", timer);
     });
 
-    socket.on("timer:pause", () => {
+    socket.on("timer:pause", async () => {
       const roomId = socket.data.roomId;
-      if (!roomId) return;
+      if (!roomId || !(await canControlSharedTimer(roomId, socket.data.user.id))) return;
       const timer = pauseTimer(roomId);
       if (timer) io.to(roomId).emit("timer:update", timer);
     });
 
-    socket.on("timer:reset", () => {
+    socket.on("timer:reset", async () => {
       const roomId = socket.data.roomId;
-      if (!roomId) return;
+      if (!roomId || !(await canControlSharedTimer(roomId, socket.data.user.id))) return;
       const timer = resetTimer(roomId);
       if (timer) io.to(roomId).emit("timer:update", timer);
     });

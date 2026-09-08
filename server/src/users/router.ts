@@ -19,6 +19,7 @@ const PROFILE_SELECT = {
   tasksCompleted: true,
   createdAt: true,
   nameColor: true,
+  country: true,
 } as const;
 
 usersRouter.get("/:id/profile", async (req, res) => {
@@ -44,6 +45,11 @@ const updateProfileSchema = z.object({
     .max(20)
     .optional(),
   nameColor: z.string().max(20).nullable().optional(),
+  country: z
+    .string()
+    .regex(/^[A-Z]{2}$/)
+    .nullable()
+    .optional(),
 });
 
 usersRouter.patch("/me", requireAuth, async (req, res) => {

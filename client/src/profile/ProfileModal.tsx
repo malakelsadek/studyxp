@@ -12,6 +12,8 @@ import {
 import { formatDurationLong } from "../room/timerMath";
 import { useAuth } from "../auth/AuthContext";
 import { ActivityHeatmap } from "./ActivityHeatmap";
+import { StudyHabitCharts } from "./StudyHabitCharts";
+import { COUNTRIES, flagEmoji } from "./countries";
 import "./Profile.css";
 
 interface ProfileModalProps {
@@ -39,6 +41,7 @@ export function ProfileModal({
   const [displayNameDraft, setDisplayNameDraft] = useState("");
   const [bioDraft, setBioDraft] = useState("");
   const [interestsDraft, setInterestsDraft] = useState<string[]>([]);
+  const [countryDraft, setCountryDraft] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [friendStatus, setFriendStatus] = useState<FriendStatus | null>(null);
   const [friendRequestId, setFriendRequestId] = useState<string | null>(null);
@@ -58,6 +61,7 @@ export function ProfileModal({
         setDisplayNameDraft(p.displayName);
         setBioDraft(p.bio);
         setInterestsDraft(p.interests);
+        setCountryDraft(p.country);
       })
       .catch((err) => {
         if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load profile");
@@ -133,6 +137,7 @@ export function ProfileModal({
         displayName: displayNameDraft.trim(),
         bio: bioDraft,
         interests: interestsDraft,
+        country: countryDraft,
       });
       setProfile((prev) => (prev ? { ...prev, ...updated } : prev));
       if (isSelf) updateDisplayName(updated.displayName);
@@ -162,34 +167,49 @@ export function ProfileModal({
           <p className="profile-error">{error}</p>
         ) : profile ? (
           <>
-            <h2>{profile.displayName}</h2>
-
-            {!isSelf && token && (
-              <div className="friend-action">
-                {friendStatus === "none" && (
-                  <button onClick={handleAddFriend} disabled={friendActionPending}>
-                    {friendActionPending ? "..." : "Add Friend"}
+            <div className="profile-modal-header">
+              <h2>
+                {profile.country && <span className="profile-flag">{flagEmoji(profile.country)}</span>}
+                {profile.displayName}
+              </h2>
+              <div className="profile-modal-header-actions">
+                {!isSelf && token && (
+                  <div className="friend-action">
+                    {friendStatus === "none" && (
+                      <button onClick={handleAddFriend} disabled={friendActionPending}>
+                        {friendActionPending ? "..." : "Add Friend"}
+                      </button>
+                    )}
+                    {friendStatus === "outgoing" && (
+                      <span className="friend-pending">Friend request sent</span>
+                    )}
+                    {friendStatus === "incoming" && (
+                      <button onClick={handleAcceptFriend} disabled={friendActionPending}>
+                        {friendActionPending ? "..." : "Accept friend request"}
+                      </button>
+                    )}
+                    {friendStatus === "friends" && (
+                      <>
+                        <span className="friend-badge">✓ Friends</span>
+                        <button
+                          className="friend-remove-btn"
+                          onClick={handleRemoveFriend}
+                          disabled={friendActionPending}
+                        >
+                          {friendActionPending ? "..." : "Remove"}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+                {isSelf && !editing && (
+                  <button className="profile-edit-btn" onClick={() => setEditing(true)}>
+                    Edit profile
                   </button>
                 )}
-                {friendStatus === "outgoing" && (
-                  <span className="friend-pending">Friend request sent</span>
-                )}
-                {friendStatus === "incoming" && (
-                  <button onClick={handleAcceptFriend} disabled={friendActionPending}>
-                    {friendActionPending ? "..." : "Accept friend request"}
-                  </button>
-                )}
-                {friendStatus === "friends" && (
-                  <>
-                    <span className="friend-badge">✓ Friends</span>
-                    <button onClick={handleRemoveFriend} disabled={friendActionPending}>
-                      {friendActionPending ? "..." : "Remove"}
-                    </button>
-                  </>
-                )}
-                {friendError && <p className="profile-error">{friendError}</p>}
               </div>
-            )}
+            </div>
+            {!isSelf && friendError && <p className="profile-error">{friendError}</p>}
 
             {editing ? (
               <>
@@ -200,6 +220,20 @@ export function ProfileModal({
                   maxLength={24}
                   placeholder="Display name"
                 />
+                <label className="country-picker">
+                  Country
+                  <select
+                    value={countryDraft ?? ""}
+                    onChange={(e) => setCountryDraft(e.target.value || null)}
+                  >
+                    <option value="">No country</option>
+                    {COUNTRIES.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {flagEmoji(c.code)} {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <textarea
                   className="bio-editor"
                   value={bioDraft}
@@ -231,11 +265,6 @@ export function ProfileModal({
                     ))}
                   </div>
                 )}
-                {isSelf && (
-                  <button className="profile-edit-btn" onClick={() => setEditing(true)}>
-                    Edit profile
-                  </button>
-                )}
               </>
             )}
 
@@ -262,6 +291,7 @@ export function ProfileModal({
               </div>
             </div>
 
+            <StudyHabitCharts heatmap={profile.stats.heatmap} />
             <ActivityHeatmap heatmap={profile.stats.heatmap} />
           </>
         ) : null}

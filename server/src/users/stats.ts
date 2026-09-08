@@ -1,7 +1,7 @@
 import { prisma } from "../prisma.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const HEATMAP_DAYS = 84;
+const HEATMAP_DAYS = 365;
 const STREAK_LOOKBACK_DAYS = 400;
 const STREAK_SAFETY_CAP = 3650;
 

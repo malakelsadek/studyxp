@@ -12,6 +12,8 @@ const MOVE_EPSILON = 0.5;
 const DEFAULT_BACKGROUND_URL = "/assets/map.png";
 export const FONT_FAMILY = "'Courier New', Courier, monospace";
 const BUBBLE_FONT_FAMILY = "'Lato', 'Segoe UI', sans-serif";
+const TYPING_FRAME_INTERVAL_MS = 650;
+const TYPING_FRAMES = ["•", "• •", "• • •"];
 export const WORLD_WIDTH = 1536;
 export const WORLD_HEIGHT = 1024;
 
@@ -35,6 +37,11 @@ interface Bubble {
   timer: Phaser.Time.TimerEvent;
 }
 
+interface TypingIndicator {
+  text: Phaser.GameObjects.Text;
+  timer: Phaser.Time.TimerEvent;
+}
+
 interface PlayerVisual {
   container: Phaser.GameObjects.Container;
   sprite: Phaser.GameObjects.Image;
@@ -42,6 +49,7 @@ interface PlayerVisual {
   character: string;
   direction: CharacterPose;
   bubbles: Bubble[];
+  typingIndicator?: TypingIndicator;
 }
 
 export class MainScene extends Phaser.Scene {
@@ -147,6 +155,47 @@ export class MainScene extends Phaser.Scene {
     this.onLocalMove = cb;
   }
 
+  setTyping(playerId: string, isTyping: boolean) {
+    const visual = playerId === this.selfId ? this.localVisual : this.otherVisuals.get(playerId);
+    if (!visual) return;
+
+    if (!isTyping) {
+      if (visual.typingIndicator) {
+        visual.typingIndicator.timer.remove();
+        visual.typingIndicator.text.destroy();
+        visual.typingIndicator = undefined;
+        this.updateAttachments(visual);
+      }
+      return;
+    }
+
+    if (visual.typingIndicator) return;
+
+    const text = this.add.text(visual.container.x, 0, TYPING_FRAMES[0], {
+      fontFamily: BUBBLE_FONT_FAMILY,
+      fontSize: "10px",
+      fontStyle: "bold",
+      color: "#ffffff",
+      backgroundColor: "#00000090",
+      padding: { x: 5, y: 3 },
+    });
+    text.setOrigin(0.5, 1);
+    text.setDepth(20);
+
+    let frameIndex = 0;
+    const timer = this.time.addEvent({
+      delay: TYPING_FRAME_INTERVAL_MS,
+      loop: true,
+      callback: () => {
+        frameIndex = (frameIndex + 1) % TYPING_FRAMES.length;
+        text.setText(TYPING_FRAMES[frameIndex]);
+      },
+    });
+
+    visual.typingIndicator = { text, timer };
+    this.updateAttachments(visual);
+  }
+
   setOnPlayerClick(cb: (id: string) => void) {
     this.onPlayerClick = cb;
   }
@@ -176,7 +225,12 @@ export class MainScene extends Phaser.Scene {
   }
 
   private updateCameraZoom() {
-    const zoom = Math.max(this.scale.width / WORLD_WIDTH, this.scale.height / WORLD_HEIGHT);
+    const { width, height } = this.scale;
+    // A resize event can transiently report a zero-size container (e.g. mid layout
+    // pass); zooming to 0 would collapse every sprite to an invisible point until the
+    // next real resize. Skip it and keep whatever zoom was last valid.
+    if (!width || !height) return;
+    const zoom = Math.max(width / WORLD_WIDTH, height / WORLD_HEIGHT);
     this.cameras.main.setZoom(zoom);
   }
 
@@ -248,6 +302,10 @@ export class MainScene extends Phaser.Scene {
           bubble.timer.remove();
           bubble.text.destroy();
         }
+        if (visual.typingIndicator) {
+          visual.typingIndicator.timer.remove();
+          visual.typingIndicator.text.destroy();
+        }
         this.otherVisuals.delete(id);
       }
     }
@@ -304,6 +362,10 @@ export class MainScene extends Phaser.Scene {
     visual.label.setPosition(visual.container.x, visual.container.y - SPRITE_DISPLAY_HEIGHT / 2 - 10);
 
     let cursorY = visual.container.y - SPRITE_DISPLAY_HEIGHT / 2 - 34;
+    if (visual.typingIndicator) {
+      visual.typingIndicator.text.setPosition(visual.container.x, cursorY);
+      cursorY -= visual.typingIndicator.text.height + BUBBLE_GAP;
+    }
     for (let i = visual.bubbles.length - 1; i >= 0; i--) {
       const bubble = visual.bubbles[i].text;
       bubble.setPosition(visual.container.x, cursorY);

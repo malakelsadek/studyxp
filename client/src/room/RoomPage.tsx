@@ -13,11 +13,13 @@ import { RoomSettings } from "./RoomSettings";
 import { LeaderboardPanel } from "./LeaderboardPanel";
 import { OutfitPanel } from "./OutfitPanel";
 import { CalendarPanel } from "./CalendarPanel";
-import { YoutubePanel } from "./YoutubePanel";
-import { SpotifyPanel } from "./SpotifyPanel";
+import { MediaTile, type MediaTab } from "./MediaTile";
 import { CelebrationPopup } from "./CelebrationPopup";
 import { useTimerSoundPreference } from "./useTimerSoundPreference";
 import { useTimerAutoBreakPreference } from "./useTimerAutoBreakPreference";
+import { useChatSizePreference } from "./useChatSizePreference";
+import { ChatSizeSetting } from "./ChatSizeSetting";
+import { NameColorSetting } from "./NameColorSetting";
 import { useTimerCompletionSound } from "./useTimerCompletionSound";
 import { useAllTasksCelebration } from "./useAllTasksCelebration";
 import { playPartySound } from "./timerSounds";
@@ -36,11 +38,11 @@ export function RoomPage() {
     timer: false,
     todo: false,
     calendar: false,
-    youtube: false,
-    spotify: false,
+    media: false,
     outfit: false,
     people: false,
   });
+  const [mediaTab, setMediaTab] = useState<MediaTab>("youtube");
   const [chatActive, setChatActive] = useState(false);
   const [showChatMessages, setShowChatMessages] = useState(true);
   const phaserRef = useRef<PhaserGameHandle>(null);
@@ -48,78 +50,12 @@ export function RoomPage() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
 
-  useEffect(() => {
-    if (!user) navigate("/");
-  }, [user, navigate]);
-
-  useEffect(() => {
-    const isTypingInField = () => {
-      const el = document.activeElement;
-      return (
-        el instanceof HTMLInputElement ||
-        el instanceof HTMLTextAreaElement ||
-        el instanceof HTMLSelectElement ||
-        el instanceof HTMLButtonElement ||
-        (el instanceof HTMLElement && el.isContentEditable)
-      );
-    };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && chatActive) {
-        e.preventDefault();
-        setChatActive(false);
-        return;
-      }
-
-      if (
-        !chatActive &&
-        !e.altKey &&
-        !e.ctrlKey &&
-        !e.metaKey &&
-        (e.key === "Enter" || e.key.toLowerCase() === "t") &&
-        !isTypingInField()
-      ) {
-        e.preventDefault();
-        setChatActive(true);
-        return;
-      }
-
-      if (!e.altKey) return;
-      const key = e.key.toLowerCase();
-
-      if (key === "t") {
-        e.preventDefault();
-        setOpenPanels((prev) => ({ ...prev, timer: !prev.timer }));
-      } else if (key === "d") {
-        e.preventDefault();
-        setOpenPanels((prev) => ({ ...prev, todo: !prev.todo }));
-      } else if (key === "b") {
-        e.preventDefault();
-        setOpenPanels((prev) => ({ ...prev, calendar: !prev.calendar }));
-      } else if (key === "p") {
-        e.preventDefault();
-        setOpenPanels((prev) => ({ ...prev, people: !prev.people }));
-      } else if (key === "y") {
-        e.preventDefault();
-        setOpenPanels((prev) => ({ ...prev, youtube: !prev.youtube }));
-      } else if (key === "s") {
-        e.preventDefault();
-        setOpenPanels((prev) => ({ ...prev, spotify: !prev.spotify }));
-      } else if (key === "h") {
-        e.preventDefault();
-        setShowChatMessages((prev) => !prev);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [chatActive]);
-
   const {
     connected,
     joined,
     selfId,
     players,
+    typingPlayerIds,
     messages,
     timer,
     personalTimer: personalTimerState,
@@ -138,10 +74,13 @@ export function RoomPage() {
     creatorId,
     allowNameChangeByMembers,
     allowBackgroundChangeByMembers,
+    disableChatDuringSharedTimer,
+    restrictTimerControlToCreator,
     joinError,
     selfProfile,
     move,
     sendChat,
+    setChatTyping,
     startTimer,
     pauseTimer,
     resetTimer,
@@ -179,7 +118,89 @@ export function RoomPage() {
     leaveRoom,
   } = useRoomState(roomId);
 
+  const chatLocked = disableChatDuringSharedTimer && timer.status === "running";
+
+  useEffect(() => {
+    if (chatLocked) setChatActive(false);
+  }, [chatLocked]);
+
+  useEffect(() => {
+    setChatTyping(chatActive);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatActive]);
+
+  useEffect(() => {
+    if (!user) navigate("/");
+  }, [user, navigate]);
+
+  useEffect(() => {
+    const isTypingInField = () => {
+      const el = document.activeElement;
+      return (
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        el instanceof HTMLSelectElement ||
+        el instanceof HTMLButtonElement ||
+        (el instanceof HTMLElement && el.isContentEditable)
+      );
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && chatActive) {
+        e.preventDefault();
+        setChatActive(false);
+        return;
+      }
+
+      if (
+        !chatActive &&
+        !chatLocked &&
+        !e.altKey &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        (e.key === "Enter" || e.key.toLowerCase() === "t") &&
+        !isTypingInField()
+      ) {
+        e.preventDefault();
+        setChatActive(true);
+        return;
+      }
+
+      if (!e.altKey) return;
+      const key = e.key.toLowerCase();
+
+      if (key === "t") {
+        e.preventDefault();
+        setOpenPanels((prev) => ({ ...prev, timer: !prev.timer }));
+      } else if (key === "d") {
+        e.preventDefault();
+        setOpenPanels((prev) => ({ ...prev, todo: !prev.todo }));
+      } else if (key === "b") {
+        e.preventDefault();
+        setOpenPanels((prev) => ({ ...prev, calendar: !prev.calendar }));
+      } else if (key === "p") {
+        e.preventDefault();
+        setOpenPanels((prev) => ({ ...prev, people: !prev.people }));
+      } else if (key === "y") {
+        e.preventDefault();
+        setMediaTab("youtube");
+        setOpenPanels((prev) => ({ ...prev, media: true }));
+      } else if (key === "s") {
+        e.preventDefault();
+        setMediaTab("spotify");
+        setOpenPanels((prev) => ({ ...prev, media: true }));
+      } else if (key === "h") {
+        e.preventDefault();
+        setShowChatMessages((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [chatActive, chatLocked]);
+
   const handleSendChat = (text: string) => {
+    if (chatLocked) return;
     // Show the sender's own bubble immediately instead of waiting on the round trip
     // through the server, which otherwise makes the bubble feel delayed.
     phaserRef.current?.showLocalChatBubble(text);
@@ -196,6 +217,7 @@ export function RoomPage() {
   };
   const { soundId, setSoundId, play: playTimerDoneSound } = useTimerSoundPreference();
   const { autoBreak, setAutoBreak } = useTimerAutoBreakPreference();
+  const { chatSize, setChatSize } = useChatSizePreference();
 
   useStudySessionLogger(timer, roomId, token, logStudyTime, setCoins);
   useStudySessionLogger(personalTimer.timer, roomId, token, logStudyTime, setCoins);
@@ -255,6 +277,7 @@ export function RoomPage() {
           selfCharacter={user.character}
           backgroundUrl={backgroundUrl}
           messages={messages}
+          typingPlayerIds={typingPlayerIds}
           onLocalMove={move}
           onPlayerClick={setViewingProfileId}
         />
@@ -270,6 +293,7 @@ export function RoomPage() {
             title="Timer"
             initialPosition={{ x: 880, y: 72 }}
             onClose={() => togglePanel("timer")}
+            width={240}
             resizable
             minWidth={240}
             maxWidth={520}
@@ -286,6 +310,7 @@ export function RoomPage() {
                 configureDurations: configureTimer,
               }}
               personal={personalTimer}
+              sharedControlAllowed={!restrictTimerControlToCreator || user.id === creatorId}
               soundId={soundId}
               onSoundChange={setSoundId}
               autoBreak={autoBreak}
@@ -299,7 +324,7 @@ export function RoomPage() {
             title="To-do"
             initialPosition={{ x: 880, y: 260 }}
             onClose={() => togglePanel("todo")}
-            width={360}
+            width={300}
             resizable
             minWidth={300}
             maxWidth={640}
@@ -329,7 +354,17 @@ export function RoomPage() {
         )}
 
         {openPanels.people && (
-          <Tile title="People" initialPosition={{ x: 880, y: 448 }} onClose={() => togglePanel("people")}>
+          <Tile
+            title="People"
+            initialPosition={{ x: 880, y: 448 }}
+            onClose={() => togglePanel("people")}
+            width={240}
+            resizable
+            minWidth={240}
+            maxWidth={480}
+            minHeight={200}
+            maxHeight={600}
+          >
             <PeopleProgress players={players} personalTodos={personalTodos} todos={todos} selfId={selfId} />
           </Tile>
         )}
@@ -350,6 +385,8 @@ export function RoomPage() {
             initialPosition={{ x: 480, y: 260 }}
             onClose={() => togglePanel("settings")}
           >
+            <ChatSizeSetting chatSize={chatSize} onChange={setChatSize} />
+            <NameColorSetting currentNameColor={user.nameColor} />
             <RoomSettings
               roomId={roomId}
               token={token}
@@ -365,6 +402,8 @@ export function RoomPage() {
               onHasPasswordChange={setHasPassword}
               allowNameChangeByMembers={allowNameChangeByMembers}
               allowBackgroundChangeByMembers={allowBackgroundChangeByMembers}
+              disableChatDuringSharedTimer={disableChatDuringSharedTimer}
+              restrictTimerControlToCreator={restrictTimerControlToCreator}
               onPermissionsChange={broadcastPermissions}
             />
           </Tile>
@@ -372,7 +411,7 @@ export function RoomPage() {
 
         {openPanels.outfit && (
           <Tile title="Outfit" initialPosition={{ x: 480, y: 448 }} onClose={() => togglePanel("outfit")}>
-            <OutfitPanel currentCharacter={user.character} currentNameColor={user.nameColor} />
+            <OutfitPanel currentCharacter={user.character} />
           </Tile>
         )}
 
@@ -381,7 +420,7 @@ export function RoomPage() {
             title="Calendar"
             initialPosition={{ x: 860, y: 72 }}
             onClose={() => togglePanel("calendar")}
-            width={340}
+            width={300}
             resizable
             minWidth={300}
             maxWidth={640}
@@ -401,34 +440,26 @@ export function RoomPage() {
           </Tile>
         )}
 
-        {openPanels.youtube && (
+        {openPanels.media && (
           <Tile
-            title="YouTube"
+            title="Media"
             initialPosition={{ x: 860, y: 260 }}
-            onClose={() => togglePanel("youtube")}
-            width={320}
+            onClose={() => togglePanel("media")}
+            width={240}
             resizable
             resizeAxis="width"
             minWidth={240}
             maxWidth={720}
           >
-            <YoutubePanel url={youtubeUrl} onSetUrl={setYoutubeUrl} canEdit={!user.isGuest} />
-          </Tile>
-        )}
-
-        {openPanels.spotify && (
-          <Tile
-            title="Spotify"
-            initialPosition={{ x: 860, y: 480 }}
-            onClose={() => togglePanel("spotify")}
-            width={320}
-            resizable
-            minWidth={240}
-            maxWidth={640}
-            minHeight={180}
-            maxHeight={500}
-          >
-            <SpotifyPanel url={spotifyUrl} onSetUrl={setSpotifyUrl} canEdit={!user.isGuest} />
+            <MediaTile
+              tab={mediaTab}
+              onTabChange={setMediaTab}
+              youtubeUrl={youtubeUrl}
+              onSetYoutubeUrl={setYoutubeUrl}
+              spotifyUrl={spotifyUrl}
+              onSetSpotifyUrl={setSpotifyUrl}
+              canEdit={!user.isGuest}
+            />
           </Tile>
         )}
 
@@ -448,6 +479,8 @@ export function RoomPage() {
           active={chatActive}
           showMessages={showChatMessages}
           onToggleMessages={() => setShowChatMessages((prev) => !prev)}
+          locked={chatLocked}
+          size={chatSize}
         />
 
         <SideNav openPanels={openPanels} onToggle={togglePanel} />

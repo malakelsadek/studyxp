@@ -18,6 +18,7 @@ export function useRoomState(roomId: string) {
   const { socket, connected } = useSocketContext();
   const [selfId, setSelfId] = useState<string | null>(null);
   const [players, setPlayers] = useState<Record<string, PlayerDTO>>({});
+  const [typingPlayerIds, setTypingPlayerIds] = useState<Set<string>>(new Set());
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [timer, setTimer] = useState<TimerState>(defaultTimer());
   const [personalTimer, setPersonalTimer] = useState<TimerState>(defaultTimer());
@@ -35,6 +36,8 @@ export function useRoomState(roomId: string) {
   const [creatorId, setCreatorId] = useState<string | null>(null);
   const [allowNameChangeByMembers, setAllowNameChangeByMembers] = useState(false);
   const [allowBackgroundChangeByMembers, setAllowBackgroundChangeByMembers] = useState(false);
+  const [disableChatDuringSharedTimer, setDisableChatDuringSharedTimer] = useState(false);
+  const [restrictTimerControlToCreator, setRestrictTimerControlToCreator] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [joined, setJoined] = useState(false);
   const [selfProfile, setSelfProfile] = useState<SelfProfile | null>(null);
@@ -79,6 +82,8 @@ export function useRoomState(roomId: string) {
       creatorId: string | null;
       allowNameChangeByMembers: boolean;
       allowBackgroundChangeByMembers: boolean;
+      disableChatDuringSharedTimer: boolean;
+      restrictTimerControlToCreator: boolean;
       selfProfile: SelfProfile | null;
     }) => {
       setSelfId(snapshot.selfId);
@@ -100,6 +105,8 @@ export function useRoomState(roomId: string) {
       setCreatorId(snapshot.creatorId);
       setAllowNameChangeByMembers(snapshot.allowNameChangeByMembers);
       setAllowBackgroundChangeByMembers(snapshot.allowBackgroundChangeByMembers);
+      setDisableChatDuringSharedTimer(snapshot.disableChatDuringSharedTimer);
+      setRestrictTimerControlToCreator(snapshot.restrictTimerControlToCreator);
       setSelfProfile(snapshot.selfProfile);
       setJoined(true);
     };
@@ -114,10 +121,27 @@ export function useRoomState(roomId: string) {
         delete next[id];
         return next;
       });
+      setTypingPlayerIds((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     };
 
     const onPlayerMoved = ({ id, x, y }: { id: string; x: number; y: number }) => {
       setPlayers((prev) => (prev[id] ? { ...prev, [id]: { ...prev[id], x, y } } : prev));
+    };
+
+    const onPlayerTyping = ({ id, typing }: { id: string; typing: boolean }) => {
+      setTypingPlayerIds((prev) => {
+        const isTyping = prev.has(id);
+        if (isTyping === typing) return prev;
+        const next = new Set(prev);
+        if (typing) next.add(id);
+        else next.delete(id);
+        return next;
+      });
     };
 
     const onChatMessage = (message: ChatMessage) => {
@@ -136,12 +160,18 @@ export function useRoomState(roomId: string) {
     const onPermissionsUpdate = ({
       allowNameChangeByMembers: nextName,
       allowBackgroundChangeByMembers: nextBackground,
+      disableChatDuringSharedTimer: nextDisableChat,
+      restrictTimerControlToCreator: nextRestrictTimer,
     }: {
       allowNameChangeByMembers: boolean;
       allowBackgroundChangeByMembers: boolean;
+      disableChatDuringSharedTimer: boolean;
+      restrictTimerControlToCreator: boolean;
     }) => {
       setAllowNameChangeByMembers(nextName);
       setAllowBackgroundChangeByMembers(nextBackground);
+      setDisableChatDuringSharedTimer(nextDisableChat);
+      setRestrictTimerControlToCreator(nextRestrictTimer);
     };
     const onLeaderboardUpdate = ({ leaderboard: next }: { leaderboard: LeaderboardEntry[] }) =>
       setLeaderboard(next);
@@ -172,6 +202,7 @@ export function useRoomState(roomId: string) {
     socket.on("player:joined", onPlayerJoined);
     socket.on("player:left", onPlayerLeft);
     socket.on("player:moved", onPlayerMoved);
+    socket.on("player:typing", onPlayerTyping);
     socket.on("chat:message", onChatMessage);
     socket.on("timer:update", onTimerUpdate);
     socket.on("todo:update", onTodoUpdate);
@@ -193,6 +224,7 @@ export function useRoomState(roomId: string) {
       socket.off("player:joined", onPlayerJoined);
       socket.off("player:left", onPlayerLeft);
       socket.off("player:moved", onPlayerMoved);
+      socket.off("player:typing", onPlayerTyping);
       socket.off("chat:message", onChatMessage);
       socket.off("timer:update", onTimerUpdate);
       socket.off("todo:update", onTodoUpdate);
@@ -213,6 +245,7 @@ export function useRoomState(roomId: string) {
 
   const move = (x: number, y: number) => socket?.emit("player:move", { x, y });
   const sendChat = (text: string) => socket?.emit("chat:send", { text });
+  const setChatTyping = (typing: boolean) => socket?.emit("chat:typing", { typing });
   const startTimer = (mode: TimerMode) => socket?.emit("timer:start", { mode });
   const pauseTimer = () => socket?.emit("timer:pause");
   const resetTimer = () => socket?.emit("timer:reset");
@@ -237,8 +270,12 @@ export function useRoomState(roomId: string) {
   const reorderPersonalTodos = (orderedIds: string[]) => socket?.emit("personal:reorder", { orderedIds });
   const broadcastBackground = (url: string | null) => socket?.emit("room:background", { url });
   const broadcastName = (nextName: string) => socket?.emit("room:name", { name: nextName });
-  const broadcastPermissions = (next: { allowNameChangeByMembers: boolean; allowBackgroundChangeByMembers: boolean }) =>
-    socket?.emit("room:permissions", next);
+  const broadcastPermissions = (next: {
+    allowNameChangeByMembers: boolean;
+    allowBackgroundChangeByMembers: boolean;
+    disableChatDuringSharedTimer: boolean;
+    restrictTimerControlToCreator: boolean;
+  }) => socket?.emit("room:permissions", next);
   const logStudyTime = (durationMs: number) => socket?.emit("study:log", { durationMs });
   const addTimeBlock = (startMinute: number, endMinute: number, label: string, tasks: string[], date: string) =>
     socket?.emit("timeblock:add", { date, startMinute, endMinute, label, tasks });
@@ -279,6 +316,7 @@ export function useRoomState(roomId: string) {
     joined,
     selfId,
     players,
+    typingPlayerIds,
     messages,
     timer,
     personalTimer,
@@ -297,10 +335,13 @@ export function useRoomState(roomId: string) {
     creatorId,
     allowNameChangeByMembers,
     allowBackgroundChangeByMembers,
+    disableChatDuringSharedTimer,
+    restrictTimerControlToCreator,
     joinError,
     selfProfile,
     move,
     sendChat,
+    setChatTyping,
     startTimer,
     pauseTimer,
     resetTimer,

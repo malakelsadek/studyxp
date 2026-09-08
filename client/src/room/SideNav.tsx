@@ -4,8 +4,7 @@ export type PanelKey =
   | "timer"
   | "todo"
   | "calendar"
-  | "youtube"
-  | "spotify"
+  | "media"
   | "outfit"
   | "people";
 
@@ -16,7 +15,7 @@ interface SideNavProps {
 
 export function SideNav({ openPanels, onToggle }: SideNavProps) {
   return (
-    <div className="side-nav">
+    <div className="side-nav" onMouseDown={(e) => e.stopPropagation()}>
       <button
         className={openPanels.settings ? "active" : ""}
         title="Room settings"
@@ -53,18 +52,11 @@ export function SideNav({ openPanels, onToggle }: SideNavProps) {
         🗓️
       </button>
       <button
-        className={openPanels.youtube ? "active" : ""}
-        title="YouTube (Alt+Y)"
-        onClick={() => onToggle("youtube")}
+        className={openPanels.media ? "active" : ""}
+        title="Media: YouTube & Spotify (Alt+Y / Alt+S)"
+        onClick={() => onToggle("media")}
       >
-        📺
-      </button>
-      <button
-        className={openPanels.spotify ? "active" : ""}
-        title="Spotify (Alt+S)"
-        onClick={() => onToggle("spotify")}
-      >
-        🎵
+        🎬
       </button>
       <button
         className={openPanels.outfit ? "active" : ""}

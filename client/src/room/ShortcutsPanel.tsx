@@ -6,8 +6,8 @@ const SHORTCUTS: Array<{ keys: string; description: string }> = [
   { keys: "Alt + D", description: "Toggle to-do list" },
   { keys: "Alt + B", description: "Toggle calendar" },
   { keys: "Alt + P", description: "Toggle people panel" },
-  { keys: "Alt + Y", description: "Toggle YouTube" },
-  { keys: "Alt + S", description: "Toggle Spotify" },
+  { keys: "Alt + Y", description: "Open Media panel (YouTube)" },
+  { keys: "Alt + S", description: "Open Media panel (Spotify)" },
 ];
 
 export function ShortcutsPanel() {
