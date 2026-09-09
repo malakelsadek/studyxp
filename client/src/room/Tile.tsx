@@ -53,18 +53,23 @@ export function Tile({
     null,
   );
 
-  const handleMouseDown = (e: ReactMouseEvent) => {
+  const handleHeaderMouseDown = (e: ReactMouseEvent) => {
+    // The minimize/close buttons handle their own clicks — don't start a drag for them.
+    if ((e.target as HTMLElement).closest(".tile-header-actions")) return;
+
     dragState.current = {
       startX: e.clientX,
       startY: e.clientY,
       originX: position.x,
       originY: position.y,
     };
+    let dragMoved = false;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!dragState.current) return;
       const dx = moveEvent.clientX - dragState.current.startX;
       const dy = moveEvent.clientY - dragState.current.startY;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragMoved = true;
       setPosition({
         x: dragState.current.originX + dx,
         y: Math.max(TOPBAR_HEIGHT, dragState.current.originY + dy),
@@ -75,6 +80,8 @@ export function Tile({
       dragState.current = null;
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
+      // A press-and-release without dragging is a click on the title bar: toggle minimize.
+      if (!dragMoved) setMinimized((prev) => !prev);
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -127,7 +134,7 @@ export function Tile({
         bringToFront();
       }}
     >
-      <div className="tile-header" onMouseDown={handleMouseDown} onDoubleClick={() => setMinimized((prev) => !prev)}>
+      <div className="tile-header" onMouseDown={handleHeaderMouseDown}>
         <span>{title}</span>
         <div className="tile-header-actions">
           <button
