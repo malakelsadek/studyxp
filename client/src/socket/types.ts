@@ -12,6 +12,8 @@ export interface TimerState {
   startedAt: number | null;
 }
 
+export type PlayerDirection = "still" | "up" | "down" | "left" | "right";
+
 export interface PlayerDTO {
   id: string;
   displayName: string;
@@ -20,6 +22,7 @@ export interface PlayerDTO {
   nameColor: string | null;
   x: number;
   y: number;
+  direction: PlayerDirection;
 }
 
 export interface ChatMessage {
@@ -101,7 +104,7 @@ export interface RoomSnapshot {
 export interface ClientToServerEvents {
   "room:join": (payload: { roomId: string; password?: string }) => void;
   "room:leave": () => void;
-  "player:move": (payload: { x: number; y: number }) => void;
+  "player:move": (payload: { x: number; y: number; direction: PlayerDirection }) => void;
   "chat:send": (payload: { text: string }) => void;
   "chat:typing": (payload: { typing: boolean }) => void;
   "timer:start": (payload: { mode: TimerMode }) => void;
@@ -166,7 +169,7 @@ export interface ServerToClientEvents {
   "room:snapshot": (payload: RoomSnapshot) => void;
   "player:joined": (payload: { player: PlayerDTO }) => void;
   "player:left": (payload: { id: string }) => void;
-  "player:moved": (payload: { id: string; x: number; y: number }) => void;
+  "player:moved": (payload: { id: string; x: number; y: number; direction: PlayerDirection }) => void;
   "chat:message": (payload: ChatMessage) => void;
   "player:typing": (payload: { id: string; typing: boolean }) => void;
   "timer:update": (payload: TimerState) => void;

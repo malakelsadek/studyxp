@@ -4,6 +4,7 @@ import type {
   ChatMessage,
   LeaderboardEntry,
   PersonalTodoItem,
+  PlayerDirection,
   PlayerDTO,
   SelfProfile,
   TimeBlock,
@@ -129,8 +130,8 @@ export function useRoomState(roomId: string) {
       });
     };
 
-    const onPlayerMoved = ({ id, x, y }: { id: string; x: number; y: number }) => {
-      setPlayers((prev) => (prev[id] ? { ...prev, [id]: { ...prev[id], x, y } } : prev));
+    const onPlayerMoved = ({ id, x, y, direction }: { id: string; x: number; y: number; direction: PlayerDirection }) => {
+      setPlayers((prev) => (prev[id] ? { ...prev, [id]: { ...prev[id], x, y, direction } } : prev));
     };
 
     const onPlayerTyping = ({ id, typing }: { id: string; typing: boolean }) => {
@@ -243,7 +244,8 @@ export function useRoomState(roomId: string) {
     };
   }, [socket, connected, roomId]);
 
-  const move = (x: number, y: number) => socket?.emit("player:move", { x, y });
+  const move = (x: number, y: number, direction: PlayerDirection) =>
+    socket?.emit("player:move", { x, y, direction });
   const sendChat = (text: string) => socket?.emit("chat:send", { text });
   const setChatTyping = (typing: boolean) => socket?.emit("chat:typing", { typing });
   const startTimer = (mode: TimerMode) => socket?.emit("timer:start", { mode });

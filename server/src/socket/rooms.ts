@@ -2,6 +2,7 @@ import type {
   ChatMessage,
   LeaderboardEntry,
   PersonalTodoItem,
+  PlayerDirection,
   PlayerDTO,
   RoomSnapshot,
   SelfProfile,
@@ -192,12 +193,19 @@ export function leaveRoom(roomId: string, socketId: string): PlayerDTO | null {
   return dto;
 }
 
-export function movePlayer(roomId: string, socketId: string, x: number, y: number): PlayerDTO | null {
+export function movePlayer(
+  roomId: string,
+  socketId: string,
+  x: number,
+  y: number,
+  direction: PlayerDirection,
+): PlayerDTO | null {
   const room = rooms.get(roomId);
   const player = room?.players.get(socketId);
   if (!room || !player) return null;
   player.x = x;
   player.y = y;
+  player.direction = direction;
   return player;
 }
 

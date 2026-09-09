@@ -8,7 +8,6 @@ const MAX_BUBBLES_PER_PLAYER = 3;
 const BUBBLE_GAP = 6;
 const SPRITE_DISPLAY_HEIGHT = 84 * 1.2;
 const HIT_WIDTH = 56 * 1.2;
-const MOVE_EPSILON = 0.5;
 const DEFAULT_BACKGROUND_URL = "/assets/map.png";
 export const FONT_FAMILY = "'Courier New', Courier, monospace";
 const BUBBLE_FONT_FAMILY = "'Lato', 'Segoe UI', sans-serif";
@@ -24,12 +23,6 @@ function isTypingInFormField(): boolean {
 
 function spriteKey(character: string, pose: CharacterPose): string {
   return `${character}:${pose}`;
-}
-
-function resolveDirectionFromDelta(dx: number, dy: number): CharacterPose {
-  if (Math.abs(dx) < MOVE_EPSILON && Math.abs(dy) < MOVE_EPSILON) return "still";
-  if (Math.abs(dx) >= Math.abs(dy)) return dx < 0 ? "left" : "right";
-  return dy < 0 ? "up" : "down";
 }
 
 interface Bubble {
@@ -61,10 +54,11 @@ export class MainScene extends Phaser.Scene {
   private selfId: string | null = null;
   private selfDisplayName = "You";
   private selfCharacter = "char-1";
-  private onLocalMove?: (x: number, y: number) => void;
+  private onLocalMove?: (x: number, y: number, direction: CharacterPose) => void;
   private onPlayerClick?: (id: string) => void;
   private lastEmitAt = 0;
   private lastEmittedPos = { x: -1, y: -1 };
+  private lastEmittedDirection: CharacterPose = "still";
 
   constructor() {
     super("main");
@@ -144,14 +138,16 @@ export class MainScene extends Phaser.Scene {
 
     const { x, y } = this.localVisual.container;
     const moved = Math.abs(x - this.lastEmittedPos.x) > 0.5 || Math.abs(y - this.lastEmittedPos.y) > 0.5;
-    if (moved && time - this.lastEmitAt > MOVE_EMIT_INTERVAL_MS) {
+    const directionChanged = direction !== this.lastEmittedDirection;
+    if ((moved || directionChanged) && time - this.lastEmitAt > MOVE_EMIT_INTERVAL_MS) {
       this.lastEmitAt = time;
       this.lastEmittedPos = { x, y };
-      this.onLocalMove?.(x, y);
+      this.lastEmittedDirection = direction;
+      this.onLocalMove?.(x, y, direction);
     }
   }
 
-  setOnLocalMove(cb: (x: number, y: number) => void) {
+  setOnLocalMove(cb: (x: number, y: number, direction: CharacterPose) => void) {
     this.onLocalMove = cb;
   }
 
@@ -282,14 +278,20 @@ export class MainScene extends Phaser.Scene {
 
       let visual = this.otherVisuals.get(player.id);
       if (!visual) {
-        visual = this.createVisual(player.x, player.y, player.character, player.displayName, false, player.id);
+        visual = this.createVisual(
+          player.x,
+          player.y,
+          player.character,
+          player.displayName,
+          false,
+          player.id,
+          player.direction,
+        );
         this.otherVisuals.set(player.id, visual);
       } else {
-        const dx = player.x - visual.container.x;
-        const dy = player.y - visual.container.y;
         visual.container.setPosition(player.x, player.y);
         visual.label.setText(player.displayName);
-        this.applyCharacter(visual, player.character, resolveDirectionFromDelta(dx, dy));
+        this.applyCharacter(visual, player.character, player.direction);
         this.updateAttachments(visual);
       }
     }
@@ -318,8 +320,9 @@ export class MainScene extends Phaser.Scene {
     name: string,
     withPhysics = false,
     clickId?: string,
+    direction: CharacterPose = "still",
   ): PlayerVisual {
-    const sprite = this.add.image(0, 0, spriteKey(character, "still"));
+    const sprite = this.add.image(0, 0, spriteKey(character, direction));
 
     const container = this.add.container(x, y, [sprite]);
     container.setSize(HIT_WIDTH, SPRITE_DISPLAY_HEIGHT);
@@ -344,7 +347,7 @@ export class MainScene extends Phaser.Scene {
     label.setShadow(1, 1, "#00000080", 1, true, true);
 
     const visual: PlayerVisual = { container, sprite, label, character, direction: "still", bubbles: [] };
-    this.applyCharacter(visual, character, "still");
+    this.applyCharacter(visual, character, direction);
     return visual;
   }
 

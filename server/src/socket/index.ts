@@ -206,7 +206,7 @@ export function registerSocketHandlers(io: AppServer) {
       socket.join(roomId);
 
       const { coins: _coins, email: _email, ...playerFields } = socket.data.user;
-      const player = { ...playerFields, x: 768, y: 512 };
+      const player = { ...playerFields, x: 768, y: 512, direction: "still" as const };
       const selfProfile = socket.data.user.isGuest
         ? null
         : {
@@ -312,12 +312,12 @@ export function registerSocketHandlers(io: AppServer) {
       io.to(roomId).emit("room:music", { kind, url: sanitizedUrl });
     });
 
-    socket.on("player:move", ({ x, y }) => {
+    socket.on("player:move", ({ x, y, direction }) => {
       const roomId = socket.data.roomId;
       if (!roomId) return;
-      const player = movePlayer(roomId, socket.id, x, y);
+      const player = movePlayer(roomId, socket.id, x, y, direction);
       if (!player) return;
-      socket.to(roomId).emit("player:moved", { id: player.id, x, y });
+      socket.to(roomId).emit("player:moved", { id: player.id, x, y, direction });
     });
 
     socket.on("character:change", ({ character }) => {

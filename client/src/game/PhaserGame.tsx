@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import Phaser from "phaser";
 import { MainScene } from "./MainScene";
-import type { ChatMessage, PlayerDTO } from "../socket/types";
+import type { ChatMessage, PlayerDirection, PlayerDTO } from "../socket/types";
 
 interface PhaserGameProps {
   players: Record<string, PlayerDTO>;
@@ -11,7 +11,7 @@ interface PhaserGameProps {
   backgroundUrl: string | null;
   messages: ChatMessage[];
   typingPlayerIds: Set<string>;
-  onLocalMove: (x: number, y: number) => void;
+  onLocalMove: (x: number, y: number, direction: PlayerDirection) => void;
   onPlayerClick: (id: string) => void;
 }
 
@@ -77,7 +77,7 @@ export const PhaserGame = forwardRef<PhaserGameHandle, PhaserGameProps>(function
     game.events.once(Phaser.Core.Events.READY, () => {
       const scene = game.scene.getScene("main") as MainScene;
       sceneRef.current = scene;
-      scene.setOnLocalMove((x, y) => onLocalMoveRef.current(x, y));
+      scene.setOnLocalMove((x, y, direction) => onLocalMoveRef.current(x, y, direction));
       scene.setOnPlayerClick((id) => onPlayerClickRef.current(id));
       if (selfRef.current.selfId) {
         scene.setSelf(selfRef.current.selfId, selfRef.current.selfDisplayName, selfRef.current.selfCharacter);
