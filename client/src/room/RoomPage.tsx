@@ -19,6 +19,9 @@ import { useTimerSoundPreference } from "./useTimerSoundPreference";
 import { useTimerAutoBreakPreference } from "./useTimerAutoBreakPreference";
 import { useChatSizePreference } from "./useChatSizePreference";
 import { ChatSizeSetting } from "./ChatSizeSetting";
+import { useMessageSoundPreference } from "./useMessageSoundPreference";
+import { MessageSoundSetting } from "./MessageSoundSetting";
+import { useNewMessageSound } from "./useNewMessageSound";
 import { NameColorSetting } from "./NameColorSetting";
 import { usePrayerTimesPreference } from "./usePrayerTimesPreference";
 import { usePrayerReminder } from "./usePrayerReminder";
@@ -168,7 +171,6 @@ export function RoomPage() {
         el instanceof HTMLInputElement ||
         el instanceof HTMLTextAreaElement ||
         el instanceof HTMLSelectElement ||
-        el instanceof HTMLButtonElement ||
         (el instanceof HTMLElement && el.isContentEditable)
       );
     };
@@ -248,6 +250,8 @@ export function RoomPage() {
   const { soundId, setSoundId, play: playTimerDoneSound } = useTimerSoundPreference();
   const { autoBreak, setAutoBreak } = useTimerAutoBreakPreference();
   const { chatSize, setChatSize } = useChatSizePreference();
+  const { soundId: messageSoundId, setSoundId: setMessageSoundId, play: playMessageSound } =
+    useMessageSoundPreference();
 
   useEffect(() => {
     // Only the local user's own personal timer is paused — the shared room timer keeps
@@ -262,6 +266,7 @@ export function RoomPage() {
   useStudySessionLogger(personalTimer.timer, roomId, token, logStudyTime, setCoins);
   useTimerCompletionSound(timer, playTimerDoneSound, autoBreak, advanceTimerPhase);
   useTimerCompletionSound(personalTimer.timer, playTimerDoneSound, autoBreak, advancePersonalTimerPhase);
+  useNewMessageSound(messages, selfId, playMessageSound);
 
   useEffect(() => {
     if (selfProfile) syncProfile(selfProfile);
@@ -425,6 +430,7 @@ export function RoomPage() {
             onClose={() => togglePanel("settings")}
           >
             <ChatSizeSetting chatSize={chatSize} onChange={setChatSize} />
+            <MessageSoundSetting soundId={messageSoundId} onChange={setMessageSoundId} />
             <NameColorSetting currentNameColor={user.nameColor} />
             <PrayerTimesSetting
               enabled={prayerEnabled}
