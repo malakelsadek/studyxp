@@ -63,6 +63,7 @@ export function TodoTile({
         nameColor: null,
         x: 0,
         y: 0,
+        direction: "still",
       });
     }
   }
