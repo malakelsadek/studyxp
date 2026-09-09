@@ -6,27 +6,30 @@ interface ChatSizeSettingProps {
   onChange: (size: ChatSize) => void;
 }
 
-const OPTIONS: Array<{ value: ChatSize; label: string }> = [
-  { value: "small", label: "Small" },
-  { value: "medium", label: "Medium" },
-  { value: "large", label: "Large" },
-];
+const SIZES: ChatSize[] = ["small", "medium", "large"];
+const LABELS: Record<ChatSize, string> = { small: "Small", medium: "Medium", large: "Large" };
 
 export function ChatSizeSetting({ chatSize, onChange }: ChatSizeSettingProps) {
-  const currentLabel = OPTIONS.find((opt) => opt.value === chatSize)?.label ?? "";
+  const index = SIZES.indexOf(chatSize);
+
   return (
-    <SettingsSection title="Chat text size" meta={currentLabel}>
-      <div className="chat-size-options">
-        {OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            className={chatSize === opt.value ? "active" : ""}
-            onClick={() => onChange(opt.value)}
-          >
-            {opt.label}
-          </button>
-        ))}
+    <SettingsSection title="Chat text size" meta={LABELS[chatSize]}>
+      <div className="chat-size-slider">
+        <input
+          type="range"
+          min={0}
+          max={SIZES.length - 1}
+          step={1}
+          value={index}
+          onChange={(e) => onChange(SIZES[Number(e.target.value)])}
+        />
+        <div className="chat-size-slider-labels">
+          {SIZES.map((size) => (
+            <span key={size} className={size === chatSize ? "active" : ""}>
+              {LABELS[size]}
+            </span>
+          ))}
+        </div>
       </div>
     </SettingsSection>
   );
