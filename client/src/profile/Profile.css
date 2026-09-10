@@ -5,7 +5,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 50;
+  /* Tiles raise themselves above each other on click and can climb well past 50 over
+     a long session — this needs to clear that whole stack, not just its starting point. */
+  z-index: 100;
 }
 
 .profile-modal {
