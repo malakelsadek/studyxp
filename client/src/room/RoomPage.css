@@ -448,21 +448,22 @@
 
 .chat-overlay-toggle {
   pointer-events: auto;
-  padding: 5px 10px;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  border: 2px solid rgba(255, 255, 255, 0.3) !important;
-  font-family: var(--chat-font);
-  font-size: 11px;
-  font-weight: 700;
+  padding: 6px 10px;
+  background: rgba(30, 30, 46, 0.75);
+  color: #eee;
+  border: 2px solid var(--pixel-border) !important;
+  box-shadow: var(--pixel-shadow-sm);
+  font-family: var(--pixel-font);
+  font-size: 10px;
 }
 
 .chat-overlay-messages {
   pointer-events: auto;
   width: 100%;
   box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.55);
-  border: 2px solid rgba(255, 255, 255, 0.15);
+  background: rgba(42, 42, 61, 0.55);
+  border: 2px solid var(--pixel-border);
+  box-shadow: var(--pixel-shadow-sm);
   padding: 8px 6px 8px 10px;
   font-size: 13px;
   max-height: 220px;
@@ -528,7 +529,8 @@
   margin: 6px 0 0;
   padding: 6px 8px;
   background: rgba(248, 113, 113, 0.15);
-  border: 1px solid rgba(248, 113, 113, 0.4);
+  border: 2px solid var(--pixel-border);
+  box-shadow: var(--pixel-shadow-sm);
   color: #f87171;
   font-family: var(--chat-font);
   font-size: 11px;
@@ -543,8 +545,9 @@
   width: 100%;
   box-sizing: border-box;
   padding: 10px 12px;
-  border: 2px solid rgba(255, 255, 255, 0.3) !important;
-  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid var(--pixel-border) !important;
+  box-shadow: var(--pixel-shadow-sm);
+  background: rgba(42, 42, 61, 0.55);
   color: #fff;
   font-size: 14px;
   font-family: var(--chat-font);
