@@ -22,6 +22,8 @@ import { ChatSizeSetting } from "./ChatSizeSetting";
 import { useMessageSoundPreference } from "./useMessageSoundPreference";
 import { MessageSoundSetting } from "./MessageSoundSetting";
 import { useNewMessageSound } from "./useNewMessageSound";
+import { useShowChatFlagsPreference } from "./useShowChatFlagsPreference";
+import { ShowChatFlagsSetting } from "./ShowChatFlagsSetting";
 import { NameColorSetting } from "./NameColorSetting";
 import { usePrayerTimesPreference } from "./usePrayerTimesPreference";
 import { usePrayerReminder } from "./usePrayerReminder";
@@ -252,6 +254,7 @@ export function RoomPage() {
   const { chatSize, setChatSize } = useChatSizePreference();
   const { soundId: messageSoundId, setSoundId: setMessageSoundId, play: playMessageSound } =
     useMessageSoundPreference();
+  const { showChatFlags, setShowChatFlags } = useShowChatFlagsPreference();
 
   useEffect(() => {
     // Only the local user's own personal timer is paused — the shared room timer keeps
@@ -431,6 +434,7 @@ export function RoomPage() {
           >
             <ChatSizeSetting chatSize={chatSize} onChange={setChatSize} />
             <MessageSoundSetting soundId={messageSoundId} onChange={setMessageSoundId} />
+            <ShowChatFlagsSetting showChatFlags={showChatFlags} onChange={setShowChatFlags} />
             <NameColorSetting currentNameColor={user.nameColor} />
             <PrayerTimesSetting
               enabled={prayerEnabled}
@@ -560,6 +564,7 @@ export function RoomPage() {
           onToggleMessages={() => setShowChatMessages((prev) => !prev)}
           locked={chatLocked}
           size={chatSize}
+          showFlags={showChatFlags}
         />
 
         <SideNav openPanels={openPanels} onToggle={togglePanel} showPrayerButton={prayerEnabled} />

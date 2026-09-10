@@ -16,6 +16,7 @@ interface ChatOverlayProps {
   onToggleMessages: () => void;
   locked?: boolean;
   size?: ChatSize;
+  showFlags?: boolean;
 }
 
 export function ChatOverlay({
@@ -26,6 +27,7 @@ export function ChatOverlay({
   onToggleMessages,
   locked,
   size = "medium",
+  showFlags = true,
 }: ChatOverlayProps) {
   const [text, setText] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -63,7 +65,7 @@ export function ChatOverlay({
               <p key={m.id} className="chat-overlay-message">
                 <span className="chat-time">{formatTime(m.at)}</span>{" "}
                 <span className="chat-from" style={{ color: m.nameColor ?? colorForUser(m.fromId) }}>
-                  {m.country && <span className="chat-flag">{flagEmoji(m.country)}</span>}
+                  {m.country && showFlags && <span className="chat-flag">{flagEmoji(m.country)}</span>}
                   {m.from}:
                 </span>{" "}
                 <span className="chat-text">{m.text}</span>
