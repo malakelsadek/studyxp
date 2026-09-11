@@ -54,6 +54,7 @@ export function RoomPage() {
     prayer: false,
   });
   const [mediaTab, setMediaTab] = useState<MediaTab>("youtube");
+  const [timerMoreTick, setTimerMoreTick] = useState(0);
   const [chatActive, setChatActive] = useState(false);
   const [showChatMessages, setShowChatMessages] = useState(true);
   const phaserRef = useRef<PhaserGameHandle>(null);
@@ -346,6 +347,7 @@ export function RoomPage() {
             maxWidth={520}
             minHeight={200}
             maxHeight={640}
+            autoFitHeightSignal={timerMoreTick}
           >
             <TimerTile
               shared={{
@@ -362,6 +364,7 @@ export function RoomPage() {
               onSoundChange={setSoundId}
               autoBreak={autoBreak}
               onAutoBreakChange={setAutoBreak}
+              onToggleMore={() => setTimerMoreTick((t) => t + 1)}
             />
           </Tile>
         )}

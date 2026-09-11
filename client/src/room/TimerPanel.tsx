@@ -15,6 +15,7 @@ interface TimerPanelProps {
   autoBreak: boolean;
   onAutoBreakChange: (value: boolean) => void;
   canControl?: boolean;
+  onToggleMore?: () => void;
 }
 
 export function TimerPanel({
@@ -29,6 +30,7 @@ export function TimerPanel({
   autoBreak,
   onAutoBreakChange,
   canControl = true,
+  onToggleMore,
 }: TimerPanelProps) {
   const [, forceTick] = useState(0);
   const [showMore, setShowMore] = useState(false);
@@ -90,7 +92,14 @@ export function TimerPanel({
         >
           Reset
         </button>
-        <button type="button" className="timer-more-toggle" onClick={() => setShowMore((v) => !v)}>
+        <button
+          type="button"
+          className="timer-more-toggle"
+          onClick={() => {
+            setShowMore((v) => !v);
+            onToggleMore?.();
+          }}
+        >
           {showMore ? "▲ Less" : "▾ More"}
         </button>
       </div>

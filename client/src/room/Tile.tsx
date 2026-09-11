@@ -1,4 +1,4 @@
-import { useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 
 // Keeps dragged tiles from being moved up underneath the topbar (RoomPage.css .room-topbar height).
 const TOPBAR_HEIGHT = 46;
@@ -21,6 +21,11 @@ interface TileProps {
   // Starts the tile at this height (scrollable body, per .tile-body's overflow-y) instead of
   // growing to fit all of its content — for tiles whose content can get long.
   initialHeight?: number;
+  // Change this value (e.g. a counter bumped on click) to release any manually-set height back
+  // to "auto" — the tile then re-fits its current content, growing or shrinking as needed. Use
+  // for a toggle that reveals/hides content (like a "More" button) so a prior manual resize
+  // doesn't leave the new content clipped or the tile oversized.
+  autoFitHeightSignal?: unknown;
 }
 
 export function Tile({
@@ -36,6 +41,7 @@ export function Tile({
   minHeight = 160,
   maxHeight = 720,
   initialHeight,
+  autoFitHeightSignal,
 }: TileProps) {
   const [position, setPosition] = useState(() => ({
     x: initialPosition.x,
@@ -49,6 +55,16 @@ export function Tile({
     width: width ?? 280,
     height: initialHeight,
   });
+
+  const isFirstAutoFitRender = useRef(true);
+  useLayoutEffect(() => {
+    if (isFirstAutoFitRender.current) {
+      isFirstAutoFitRender.current = false;
+      return;
+    }
+    setSize((prev) => ({ ...prev, height: undefined }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoFitHeightSignal]);
   const tileRef = useRef<HTMLDivElement>(null);
   const dragState = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(
     null,

@@ -20,6 +20,7 @@ interface TimerTileProps {
   onSoundChange: (id: string) => void;
   autoBreak: boolean;
   onAutoBreakChange: (value: boolean) => void;
+  onToggleMore?: () => void;
 }
 
 export function TimerTile({
@@ -30,6 +31,7 @@ export function TimerTile({
   onSoundChange,
   autoBreak,
   onAutoBreakChange,
+  onToggleMore,
 }: TimerTileProps) {
   const [mode, setMode] = useState<ViewMode>("shared");
   const active = mode === "shared" ? shared : personal;
@@ -49,6 +51,7 @@ export function TimerTile({
         autoBreak={autoBreak}
         onAutoBreakChange={onAutoBreakChange}
         canControl={mode === "personal" || sharedControlAllowed}
+        onToggleMore={onToggleMore}
       />
     </div>
   );
