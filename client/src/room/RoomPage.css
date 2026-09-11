@@ -20,7 +20,9 @@
   padding: 0 14px;
   background: rgba(42, 42, 61, 0.82);
   border-bottom: 2px solid #0d0d14;
-  font-size: 11px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
 }
 
 .room-topbar-actions {
