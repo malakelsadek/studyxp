@@ -233,6 +233,7 @@ export function RoomSettings({
 
   return (
     <div className="room-settings">
+      <div className="room-settings-group-label">Room details</div>
       {canEditName && (
         <SettingsSection
           title="Room name"
@@ -422,6 +423,8 @@ export function RoomSettings({
           </div>
         </SettingsSection>
       )}
+
+      {isCreator && <div className="room-settings-group-label">Permissions & controls</div>}
 
       {isCreator && (
         <SettingsSection

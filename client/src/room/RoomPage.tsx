@@ -431,7 +431,14 @@ export function RoomPage() {
             title="Room settings"
             initialPosition={{ x: 480, y: 260 }}
             onClose={() => togglePanel("settings")}
+            resizable
+            minWidth={260}
+            maxWidth={520}
+            minHeight={200}
+            maxHeight={720}
+            initialHeight={420}
           >
+            <div className="room-settings-group-label">Your preferences</div>
             <ChatSizeSetting chatSize={chatSize} onChange={setChatSize} />
             <MessageSoundSetting soundId={messageSoundId} onChange={setMessageSoundId} />
             <ShowChatFlagsSetting showChatFlags={showChatFlags} onChange={setShowChatFlags} />

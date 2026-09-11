@@ -18,6 +18,9 @@ interface TileProps {
   maxWidth?: number;
   minHeight?: number;
   maxHeight?: number;
+  // Starts the tile at this height (scrollable body, per .tile-body's overflow-y) instead of
+  // growing to fit all of its content — for tiles whose content can get long.
+  initialHeight?: number;
 }
 
 export function Tile({
@@ -32,6 +35,7 @@ export function Tile({
   maxWidth = 640,
   minHeight = 160,
   maxHeight = 720,
+  initialHeight,
 }: TileProps) {
   const [position, setPosition] = useState(() => ({
     x: initialPosition.x,
@@ -43,7 +47,7 @@ export function Tile({
   const bringToFront = () => setZIndex(++highestTileZIndex);
   const [size, setSize] = useState<{ width: number; height: number | undefined }>({
     width: width ?? 280,
-    height: undefined,
+    height: initialHeight,
   });
   const tileRef = useRef<HTMLDivElement>(null);
   const dragState = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(

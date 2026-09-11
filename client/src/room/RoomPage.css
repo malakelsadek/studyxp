@@ -1131,6 +1131,18 @@
   cursor: pointer;
 }
 
+.room-settings-group-label {
+  margin: 14px 0 2px;
+  padding: 0 2px 4px;
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #4ade80;
+  border-bottom: 1px solid #0d0d14;
+}
+
 .room-settings-section {
   border-bottom: 1px solid #0d0d14;
 }
