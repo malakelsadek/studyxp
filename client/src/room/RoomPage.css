@@ -42,6 +42,11 @@
   color: #eee;
 }
 
+.room-topbar-actions button.active {
+  background: #4ade80;
+  color: #111;
+}
+
 .room-topbar-coins {
   display: flex;
   align-items: center;

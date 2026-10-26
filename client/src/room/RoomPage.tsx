@@ -61,6 +61,7 @@ export function RoomPage() {
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showSideNav, setShowSideNav] = useState(true);
 
   const {
     connected,
@@ -310,6 +311,19 @@ export function RoomPage() {
         </span>
         <div className="room-topbar-actions">
           <span className="room-topbar-coins">🪙 {user.coins}</span>
+          <button
+            className={openPanels.people ? "active" : ""}
+            title="Who's in the room"
+            onClick={() => togglePanel("people")}
+          >
+            👥 {playerCount}
+          </button>
+          <button
+            title={showSideNav ? "Hide sidebar" : "Show sidebar"}
+            onClick={() => setShowSideNav((prev) => !prev)}
+          >
+            {showSideNav ? "◀" : "▶"}
+          </button>
           <button onClick={() => { leaveRoom(); navigate("/dashboard"); }}>Home</button>
           <button onClick={() => setShowLeaderboard((prev) => !prev)}>Leaderboard</button>
           <button onClick={() => { logout(); navigate("/"); }}>Log out</button>
@@ -577,7 +591,7 @@ export function RoomPage() {
           showFlags={showChatFlags}
         />
 
-        <SideNav openPanels={openPanels} onToggle={togglePanel} showPrayerButton={prayerEnabled} />
+        {showSideNav && <SideNav openPanels={openPanels} onToggle={togglePanel} showPrayerButton={prayerEnabled} />}
 
         {showCelebration && <CelebrationPopup onDismiss={() => setShowCelebration(false)} />}
 

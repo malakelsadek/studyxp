@@ -327,6 +327,7 @@ export class MainScene extends Phaser.Scene {
     const container = this.add.container(x, y, [sprite]);
     container.setSize(HIT_WIDTH, SPRITE_DISPLAY_HEIGHT);
     container.setInteractive({ useHandCursor: true });
+    container.setDepth(1);
 
     if (withPhysics) {
       this.physics.add.existing(container);
@@ -345,6 +346,7 @@ export class MainScene extends Phaser.Scene {
     });
     label.setOrigin(0.5, 1);
     label.setShadow(1, 1, "#00000080", 1, true, true);
+    label.setDepth(2);
 
     const visual: PlayerVisual = { container, sprite, label, character, direction: "still", bubbles: [] };
     this.applyCharacter(visual, character, direction);

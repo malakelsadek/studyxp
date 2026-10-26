@@ -86,19 +86,6 @@ export const PhaserGame = forwardRef<PhaserGameHandle, PhaserGameProps>(function
       if (backgroundUrlRef.current) {
         scene.setBackground(backgroundUrlRef.current);
       }
-
-      // READY fires before preload/create, so sprites created above have placeholder
-      // textures if the snapshot arrived before assets loaded. Re-sync once create()
-      // completes so applyCharacter runs with textures available.
-      scene.events.once('create', () => {
-        if (selfRef.current.selfId) {
-          scene.setSelf(selfRef.current.selfId, selfRef.current.selfDisplayName, selfRef.current.selfCharacter);
-        }
-        scene.syncPlayers(playersRef.current);
-        if (backgroundUrlRef.current) {
-          scene.setBackground(backgroundUrlRef.current);
-        }
-      });
     });
 
     return () => {
